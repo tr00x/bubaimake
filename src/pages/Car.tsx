@@ -1,47 +1,83 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import imgBmwM5Competition from "figma:asset/5ff7312c3dc0a1014ede77a74beefcf8924374ee.png";
+import imgBmwM5Competition from "../assets/5ff7312c3dc0a1014ede77a74beefcf8924374ee.png";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "../components/ui/carousel";
-import { ArrowRight, Gauge, Fuel, Calendar, Cog, BadgeCheck } from "lucide-react";
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "../components/ui/breadcrumb";
+import { ArrowRight, ArrowLeft, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck } from "lucide-react";
+import client from "../api/client";
 import { CarCard } from "../components/CatalogSection";
 
 type CarData = {
+  id: string;
   title: string;
-  price: string;
-  tags: string[];
-  specs: { label: string; value: string }[];
-  images: string[];
-  description: string;
-  features: string[];
-  performance?: {
-    powerHP?: string;
-    torqueNm?: string;
-    zeroTo100?: string;
-    vmax?: string;
-  };
-  dimensions?: {
-    length?: string;
-    width?: string;
-    height?: string;
-    wheelbase?: string;
-  };
-  consumption?: {
-    wltpCombined?: string;
-    co2Combined?: string;
-  };
+  priceUsd: number;
+  year: number;
+  mileage: number;
+  transmission: string;
+  horsepower: number;
+  topSpeed: number;
+  fuelType: string;
+  condition: string;
+  descriptionMd: string;
+  status: string;
+  tags: string; // CSV
+  labels: string; // CSV
+  images: { pathOrUrl: string; isMain: boolean }[];
 };
 
 export default function CarPage() {
-  const { slug } = useParams();
-  const [carouselApi, setCarouselApi] = useState<any>(null);
-  const [showSticky, setShowSticky] = useState(false);
+  const { slug } = useParams(); // Using ID as slug
+  const [car, setCar] = useState<CarData | null>(null);
+  const [similarCars, setSimilarCars] = useState<CarData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showSticky, setShowSticky] = useState(false);
+  
+  // Ref for similar cars scroll container
+  const similarCarsRef = useRef<HTMLDivElement>(null);
+
+  const scrollSimilar = (direction: 'left' | 'right') => {
+    if (similarCarsRef.current) {
+      const scrollAmount = 350; // Approx card width + gap
+      const newScrollLeft = direction === 'left' 
+        ? similarCarsRef.current.scrollLeft - scrollAmount
+        : similarCarsRef.current.scrollLeft + scrollAmount;
+      
+      similarCarsRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (slug) {
+      setLoading(true);
+      // Fetch current car
+      client.get(`/cars/${slug}`)
+        .then(res => {
+          setCar(res.data);
+          setActiveImageIndex(0); // Reset image index on car change
+        })
+        .catch(err => console.error("Failed to fetch car", err))
+        .finally(() => setLoading(false));
+
+      // Fetch similar cars (all active cars for now, filter client side)
+      client.get('/cars')
+        .then(res => {
+          // Filter out current car and take up to 12 similar cars for the carousel
+          const others = res.data.filter((c: CarData) => c.id !== slug);
+          setSimilarCars(others.slice(0, 12));
+        })
+        .catch(err => console.error("Failed to fetch similar cars", err));
+    }
+  }, [slug]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -51,75 +87,62 @@ export default function CarPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const car: CarData = useMemo(() => {
-    // Demo data; can be sourced from API later
-    return {
-      title: "BMW M5 Competition",
-      price: "$138,889",
-      tags: ["Горячее", "Новый"],
-      specs: [
-        { label: "Год", value: "2024" },
-        { label: "Топливо", value: "Бензин" },
-        { label: "КПП", value: "Автомат" },
-        { label: "Мощность", value: "625 л.с." },
-        { label: "0–100 км/ч", value: "3.3 сек" },
-      ],
-      images: [imgBmwM5Competition, imgBmwM5Competition, imgBmwM5Competition],
-      description:
-        "Спортивный седан премиум-класса с мощным двигателем и богатой комплектацией. Идеален для динамичной езды и комфортных поездок. Автомобиль с прозрачной историей и гарантией качества.",
-      features: [
-        "Кожа Nappa",
-        "Премиальная аудиосистема",
-        "Пакет M Sport",
-        "Адаптивная подвеска",
-        "Подогрев сидений",
-        "Панорамная крыша",
-      ],
-      performance: {
-        powerHP: "625 л.с.",
-        torqueNm: "750 Нм",
-        zeroTo100: "3.3 сек",
-        vmax: "305 км/ч",
-      },
-      dimensions: {
-        length: "4970 мм",
-        width: "1903 мм",
-        height: "1473 мм",
-        wheelbase: "2982 мм",
-      },
-      consumption: {
-        wltpCombined: "10.6–10.8 л/100 км",
-        co2Combined: "240–245 г/км",
-      },
-    };
-  }, [slug]);
+  if (loading) return <div className="p-10 text-center">Загрузка...</div>;
+  if (!car) return <div className="p-10 text-center">Автомобиль не найден</div>;
+
+  const images = car.images && car.images.length > 0
+    ? car.images.map(i => i.pathOrUrl)
+    : [imgBmwM5Competition];
+
+  // Transform DB data to Display format
+  const tagsList = car.tags ? car.tags.split(',') : [];
+  const priceStr = `$${car.priceUsd.toLocaleString()}`;
 
   return (
-    <section className="max-w-[1400px] mx-auto px-4 md:px-[40px] pt-[40px] md:pt-[60px] pb-[40px] md:pb-[60px] flex flex-col gap-[24px]">
+    <section className="car-page-section max-w-[1400px] mx-auto px-4 md:px-[40px] pb-[100px] md:pb-[140px] flex flex-col gap-[24px]">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Главная</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/catalog">Каталог</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{car.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       {showSticky && (
         <div className="sticky top-[72px] z-40">
           <div className="bg-white/90 backdrop-blur-md border border-neutral-200 rounded-[12px] px-[16px] py-[12px] flex items-center justify-between shadow-lg shadow-black/5">
             <div className="flex items-center gap-[12px]">
               <span className="text-[15px] font-medium text-[#141414]">{car.title}</span>
               <div className="hidden md:flex gap-[8px]">
-                {car.tags.map((t) => (
+                {tagsList.map((t) => (
                   <span key={t} className={`px-[10px] py-[4px] rounded-[4px] border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-neutral-200 text-[#141414]"}`}>{t}</span>
                 ))}
               </div>
             </div>
             <div className="flex items-center gap-[12px] ml-auto">
               <div className="px-[20px] py-[10px] bg-[#141414] text-white rounded-[12px] font-semibold tracking-tight shadow-lg shadow-black/10">
-                {car.price}
+                {priceStr}
               </div>
-              <a href="#" className="inline-flex items-center gap-[10px] px-[20px] py-[12px] rounded-[12px] bg-[#141414] text-white hover:bg-neutral-800 active:scale-95 transition-all shadow-lg shadow-black/10">
-                <span className="text-[14px]">Оставить заявку</span>
-                <ArrowRight className="w-4 h-4" />
+              <a href="#" className="btn-slide">
+                <span className="circle">
+                  <Mail className="w-5 h-5" />
+                </span>
+                <span className="title">Написать менеджеру</span>
+                <span className="title title-hover">Написать менеджеру</span>
               </a>
             </div>
           </div>
         </div>
       )}
-      
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
         <div className="flex flex-col gap-[20px]">
@@ -127,7 +150,7 @@ export default function CarPage() {
             {car.title}
           </h1>
           <div className="flex flex-wrap gap-[8px]">
-            {car.tags.map((t) => (
+            {tagsList.map((t) => (
               <span
                 key={t}
                 className={`px-[10px] py-[4px] rounded-[4px] border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-neutral-200 text-[#141414]"}`}
@@ -137,14 +160,9 @@ export default function CarPage() {
             ))}
           </div>
           <div className="flex flex-wrap gap-[8px]">
-            {car.specs.slice(0, 3).map((s) => (
-              <span
-                key={s.label}
-                className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]"
-              >
-                {s.value}
-              </span>
-            ))}
+            <span className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">{car.year}</span>
+            <span className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">{car.fuelType}</span>
+            <span className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">{car.transmission}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-[12px] py-[12px] border-t border-neutral-200">
@@ -153,56 +171,63 @@ export default function CarPage() {
                 <Gauge className="w-4 h-4" />
                 <span className="text-[12px]">Макс. скорость</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.performance?.vmax || "—"}</span>
+              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.topSpeed ? `${car.topSpeed} км/ч` : "—"}</span>
             </div>
             <div className="flex flex-col gap-[2px]">
               <div className="flex items-center gap-[6px] text-neutral-500">
                 <Calendar className="w-4 h-4" />
                 <span className="text-[12px]">Год выпуска</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.specs.find(s=>s.label==="Год")?.value || "—"}</span>
+              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.year}</span>
             </div>
             <div className="flex flex-col gap-[2px]">
               <div className="flex items-center gap-[6px] text-neutral-500">
                 <Cog className="w-4 h-4" />
                 <span className="text-[12px]">КПП</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.specs.find(s=>s.label==="КПП")?.value || "—"}</span>
+              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.transmission}</span>
             </div>
             <div className="flex flex-col gap-[2px]">
               <div className="flex items-center gap-[6px] text-neutral-500">
                 <Fuel className="w-4 h-4" />
                 <span className="text-[12px]">Тип топлива</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.specs.find(s=>s.label==="Топливо")?.value || "—"}</span>
+              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.fuelType}</span>
             </div>
             <div className="flex flex-col gap-[2px]">
               <div className="flex items-center gap-[6px] text-neutral-500">
                 <Gauge className="w-4 h-4" />
                 <span className="text-[12px]">Мощность</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.performance?.powerHP || "—"}</span>
+              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.horsepower} л.с.</span>
             </div>
             <div className="flex flex-col gap-[2px]">
               <div className="flex items-center gap-[6px] text-neutral-500">
                 <BadgeCheck className="w-4 h-4" />
                 <span className="text-[12px]">Состояние</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.tags.includes("Новый") ? "Новый" : "C пробегом"}</span>
+              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.condition}</span>
             </div>
           </div>
 
-          <div className="mt-2 flex justify-end">
-            <button className="px-[32px] py-[16px] bg-[#141414] text-white rounded-[14px] font-semibold tracking-tight shadow-lg shadow-black/10 hover:bg-neutral-900 active:scale-95 transition-all">
-              {car.price}
+          <div className="mt-4 flex items-center gap-[12px]">
+            <div className="px-[20px] py-[10px] bg-[#141414] text-white rounded-[12px] font-semibold tracking-tight shadow-lg shadow-black/10">
+              {priceStr}
+            </div>
+            <button type="button" className="btn-slide">
+              <span className="circle">
+                <Mail className="w-5 h-5" />
+              </span>
+              <span className="title">Написать менеджеру</span>
+              <span className="title title-hover">Написать менеджеру</span>
             </button>
           </div>
         </div>
-        
+
         <div className="relative">
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[12px]">
             <img
-              src={car.images[activeImageIndex]}
+              src={images[activeImageIndex]}
               alt={car.title}
               className="w-full h-full object-cover"
             />
@@ -211,146 +236,146 @@ export default function CarPage() {
       </div>
 
       <div className="flex flex-col gap-[12px]">
-        <h2 className="text-[20px] md:text-[24px] font-semibold">Больше фото</h2>
-        <div className="bg-white rounded-[16px] border border-[#e6e6e6] p-4">
-          <Carousel className="rounded-[12px]">
-            <CarouselContent className="flex gap-2">
-              {car.images.map((src, idx) => (
-                <CarouselItem
-                  key={idx}
-                  className="basis-auto min-w-[36px] md:min-w-[48px]"
-                >
-                  <button
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`relative w-full overflow-hidden rounded-[10px] border ${
-                      idx === activeImageIndex
-                        ? "border-[#141414] ring-2 ring-[#141414]"
-                        : "border-[#e6e6e6]"
-                    }`}
-                    aria-label={`Фото ${idx + 1}`}
-                  >
-                    <div className="aspect-[4/3] bg-neutral-100">
-                      <img
-                        src={src}
-                        alt={`${car.title} ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </button>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="w-[40px] h-[40px] rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 shadow-sm active:scale-95 transition-all" />
-            <CarouselNext className="w-[40px] h-[40px] rounded-full bg-white border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 shadow-sm active:scale-95 transition-all" />
-          </Carousel>
+        <div className="flex items-center justify-between">
+          <h2 className="text-[20px] md:text-[24px] font-semibold">Больше фото</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+              className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+              aria-label="Previous image"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+              className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+              aria-label="Next image"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {images.map((src, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveImageIndex(idx)}
+              className={`relative aspect-[4/3] w-full overflow-hidden rounded-[12px] transition-all hover:opacity-90 ${idx === activeImageIndex
+                  ? "ring-2 ring-[#141414] ring-offset-2"
+                  : "border border-neutral-100 hover:border-neutral-300"
+                }`}
+            >
+              <img
+                src={src}
+                alt={`${car.title} ${idx + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
-        <div className="lg:col-span-2 flex flex-col gap-[16px]">
-          <h2 className="text-[20px] md:text-[24px] font-semibold">Описание</h2>
-          <p className="text-neutral-600 leading-relaxed">{car.description}</p>
-
-          <h2 className="text-[20px] md:text-[24px] font-semibold mt-[8px]">Характеристики</h2>
-          <div className="grid grid-cols-2 gap-[12px] py-[12px] border-y border-dashed border-neutral-200">
-            {car.specs.map((s) => (
-              <div key={s.label} className="flex flex-col gap-[2px]">
-                <span className="text-[12px] text-neutral-400">{s.label}</span>
-                <span className="text-[14px] font-medium text-[#141414]">{s.value}</span>
-              </div>
-            ))}
-            {[
-              { label: "Макс. скорость", value: car.performance?.vmax },
-              { label: "Мощность", value: car.performance?.powerHP },
-              { label: "Крутящий момент", value: car.performance?.torqueNm },
-              { label: "0–100 км/ч", value: car.performance?.zeroTo100 },
-            ].map((p) => (
-              <div key={p.label} className="flex flex-col gap-[2px]">
-                <span className="text-[12px] text-neutral-400">{p.label}</span>
-                <span className="text-[14px] font-medium text-[#141414]">{p.value || "—"}</span>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]" style={{ marginTop: "30px" }}>
+        <div className="lg:col-span-2 flex flex-col gap-[24px]">
+          <div>
+            <h2 className="text-[20px] md:text-[24px] font-semibold mb-[16px]">Описание</h2>
+            <p className="text-neutral-600 leading-relaxed whitespace-pre-line">{car.descriptionMd?.split("**Комплектация:**")[0]}</p>
           </div>
 
-          
-
-          <h2 className="text-[20px] md:text-[24px] font-semibold mt-[8px]">Комплектация</h2>
-          <div className="flex flex-wrap gap-[8px]">
-            {car.features.map((f) => (
-              <span key={f} className="text-[13px] text-neutral-600 bg-neutral-100 px-[10px] py-[6px] rounded-[8px] border border-neutral-200">
-                {f}
-              </span>
-            ))}
+          <div>
+            <h2 className="text-[20px] md:text-[24px] font-semibold mb-[16px]">Комплектация</h2>
+            {/* Parse MD bullet points for features */}
+            <div className="flex flex-wrap gap-[8px]">
+              {car.descriptionMd?.split("**Комплектация:**")[1]?.split('\n').filter(l => l.trim().startsWith('*')).map((f, i) => (
+                <span key={i} className="text-[13px] text-neutral-600 bg-neutral-100 px-[10px] py-[6px] rounded-[8px] border border-neutral-200">
+                  {f.replace('*', '').trim()}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-[12px]">
-          <div className="rounded-[12px] border border-[#e6e6e6] p-[16px] bg-white shadow-sm">
-            <span className="text-[13px] font-semibold text-neutral-500 uppercase tracking-wider">Консультация</span>
-            <p className="text-[16px] font-medium mt-2 text-[#141414]">Рассчитаем доставку и растаможку, подберём лучшее предложение</p>
-            <ul className="mt-3 flex flex-col gap-2 text-[13px] text-neutral-600">
-              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Персональный менеджер</li>
-              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Прозрачные условия сделки</li>
-              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Документы и страхование</li>
+          <div className="rounded-[20px] border border-neutral-100 p-[24px] bg-white sticky top-[100px] flex flex-col gap-6">
+            <div>
+              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest">Консультация</span>
+              <p className="text-[18px] font-medium mt-3 text-[#141414] leading-snug">Рассчитаем доставку и растаможку, подберём лучшее предложение</p>
+            </div>
+            
+            <div className="w-full h-px bg-neutral-100"></div>
+
+            <ul className="flex flex-col gap-4">
+              <li className="flex items-center gap-3 text-[14px] text-[#141414]">
+                <UserCheck className="w-5 h-5 text-neutral-400" />
+                <span className="font-medium">Персональный менеджер</span>
+              </li>
+              <li className="flex items-center gap-3 text-[14px] text-[#141414]">
+                <FileCheck className="w-5 h-5 text-neutral-400" />
+                <span className="font-medium">Прозрачные условия сделки</span>
+              </li>
+              <li className="flex items-center gap-3 text-[14px] text-[#141414]">
+                <ShieldCheck className="w-5 h-5 text-neutral-400" />
+                <span className="font-medium">Документы и страхование</span>
+              </li>
             </ul>
-            <a href="#" className="mt-4 ml-auto inline-flex items-center gap-[10px] px-[20px] py-[12px] rounded-[12px] bg-[#141414] text-white hover:bg-neutral-800 active:scale-95 transition-all shadow-lg shadow-black/10">
-              <span className="text-[14px]">Написать менеджеру</span>
-              <ArrowRight className="w-4 h-4" />
+
+            <a href="#" className="mt-2 btn-slide w-full justify-center group">
+              <span className="circle group-hover:bg-white group-hover:text-[#141414]">
+                <Mail className="w-5 h-5" />
+              </span>
+              <span className="title">Написать менеджеру</span>
+              <span className="title title-hover">Написать менеджеру</span>
             </a>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-[16px]">
-        <h2 className="text-[20px] md:text-[24px] font-semibold">Похожие автомобили</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[24px]">
-          {[
-            {
-              title: "Audi RS6 Performance",
-              slug: "audi-rs6-performance",
-              meta: ["2023", "Бензин", "Автомат"],
-              specs: { hp: "630 л.с.", zeroTo100: "3.4 сек" },
-              price: "$129,000",
-              tags: [],
-            },
-            {
-              title: "Mercedes-AMG E63 S",
-              slug: "mercedes-amg-e63-s",
-              meta: ["2022", "Бензин", "Автомат"],
-              specs: { hp: "612 л.с.", zeroTo100: "3.2 сек" },
-              price: "$119,500",
-              tags: [],
-            },
-            {
-              title: "Porsche Panamera Turbo S",
-              slug: "porsche-panamera-turbo-s",
-              meta: ["2021", "Бензин", "Автомат"],
-              specs: { hp: "630 л.с.", zeroTo100: "3.1 сек" },
-              price: "$139,900",
-              tags: [],
-            },
-            {
-              title: "BMW M3 Competition",
-              slug: "bmw-m3-competition",
-              meta: ["2024", "Бензин", "Автомат"],
-              specs: { hp: "510 л.с.", zeroTo100: "3.8 сек" },
-              price: "$96,700",
-              tags: [],
-            },
-          ].map((item) => (
-            <CarCard
-              key={item.slug}
-              title={item.title}
-              image={imgBmwM5Competition}
-              tags={item.tags}
-              meta={item.meta}
-              specs={item.specs}
-              price={item.price}
-              slug={item.slug}
-            />
-          ))}
+      {similarCars.length > 0 && (
+        <div className="flex flex-col gap-[16px]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[20px] md:text-[24px] font-semibold">Похожие автомобили</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => scrollSimilar('left')}
+                className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+                aria-label="Scroll left"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => scrollSimilar('right')}
+                className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          
+          <div 
+            ref={similarCarsRef}
+            className="flex gap-[24px] overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {similarCars.map((item) => {
+              const mainImg = item.images?.find(i => i.isMain)?.pathOrUrl || item.images?.[0]?.pathOrUrl || imgBmwM5Competition;
+              return (
+                <div key={item.id} className="min-w-[280px] md:min-w-[320px] snap-start">
+                  <CarCard
+                    title={item.title}
+                    image={mainImg}
+                    tags={item.tags ? item.tags.split(',') : []}
+                    meta={[item.year.toString(), item.fuelType, item.transmission]}
+                    specs={{ hp: `${item.horsepower} л.с.`, zeroTo100: item.topSpeed ? '3.5 сек' : '—' }}
+                    price={`$${item.priceUsd.toLocaleString()}`}
+                    id={item.id}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

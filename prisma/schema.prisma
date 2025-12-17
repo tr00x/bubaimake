@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Car {
+  id            String   @id @default(uuid())
+  title         String
+  priceUsd      Int
+  year          Int
+  mileage       Int?
+  transmission  String
+  horsepower    Int?
+  topSpeed      Int?
+  fuelType      String
+  condition     String
+  descriptionMd String
+  status        String   // "active" | "hidden" | "reserved"
+  tags          String   // JSON string or comma-separated
+  labels        String   // JSON string or comma-separated
+  youtubeUrl    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  images        Image[]
+}
+
+model Image {
+  id        String  @id @default(uuid())
+  carId     String
+  car       Car     @relation(fields: [carId], references: [id], onDelete: Cascade)
+  pathOrUrl String
+  isMain    Boolean @default(false)
+  sortOrder Int     @default(0)
+}
