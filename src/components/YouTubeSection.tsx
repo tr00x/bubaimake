@@ -1,20 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Play } from "lucide-react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "./ui/carousel";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-} from "./ui/dialog";
+import React, { useEffect, useState, useRef } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 // YouTube Icon SVG
 function YouTubeIcon() {
@@ -33,12 +20,70 @@ interface VideoItem {
   title: string;
   thumbnail: string;
   date: string;
-  isShort: boolean;
+  viewCount?: string;
+  length?: string;
 }
 
 export default function YouTubeSection() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+  
+  // Drag to scroll state
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftState, setScrollLeftState] = useState(0);
+
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const scrollAmount = container.clientWidth * 0.75;
+      container.scrollBy({
+        left: direction === 'right' ? scrollAmount : -scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  // Drag Handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+    setScrollLeftState(scrollContainerRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    // Only prevent default if moved significantly (drag threshold)
+    if (Math.abs(x - startX) > 5) {
+        e.preventDefault();
+        const walk = (x - startX) * 1.5; // Scroll-fast
+        scrollContainerRef.current.scrollLeft = scrollLeftState - walk;
+    }
+  };
 
   useEffect(() => {
     // Load YouTube Subscribe Button script
@@ -48,37 +93,26 @@ export default function YouTubeSection() {
     script.defer = true;
     document.body.appendChild(script);
 
-    const CACHE_KEY = "youtube_feed_cache_v3"; // Incremented version to include shorts
+    const CACHE_KEY = "youtube_feed_cache_v12"; // Incremented version
     const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
     const fetchVideos = () => {
-       const RSS_URL = "https://www.youtube.com/feeds/videos.xml?channel_id=UCoMu2BkIcQHKkUy9dr3gNdQ";
-       const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`;
+       // Fetch from our local proxy which scrapes the Videos tab (excluding shorts)
+       // Use relative URL so it works through tunnel/proxy
+       const API_URL = "/api/youtube-videos";
 
        fetch(API_URL)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
         .then(data => {
-          if (data.items && data.items.length > 0) {
-            const fetchedVideos = data.items
-              .map((item: any) => {
-               // guid format: "yt:video:VIDEO_ID"
-               const videoId = item.guid.split(":")[2];
-               const isShort = item.link.includes('shorts') || item.title.toLowerCase().includes('#shorts');
-               return {
-                 id: videoId,
-                 title: item.title,
-                 thumbnail: isShort 
-                    ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` // Attempt maxres for shorts
-                    : `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-                 date: new Date(item.pubDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
-                 isShort
-               };
-            });
-            setVideos(fetchedVideos);
+          if (Array.isArray(data) && data.length > 0) {
+            setVideos(data);
             // Save to cache
             localStorage.setItem(CACHE_KEY, JSON.stringify({
               timestamp: Date.now(),
-              videos: fetchedVideos
+              videos: data
             }));
           }
         })
@@ -112,7 +146,7 @@ export default function YouTubeSection() {
   }, []);
 
   return (
-    <section className="max-w-[1400px] mx-auto px-4 md:px-[40px] py-10 md:py-[80px] flex flex-col gap-[40px]">
+    <section className="max-w-[1400px] mx-auto px-4 md:px-[80px] py-10 md:py-[80px] flex flex-col gap-[40px]">
       {/* Gradient Banner */}
       <div className="w-full relative rounded-[24px] bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-full bg-gradient-to-l from-white/40 to-transparent pointer-events-none" />
@@ -143,6 +177,8 @@ export default function YouTubeSection() {
 
       {/* Main Content Area */}
       <div className="flex flex-col gap-8">
+        {/* Header with Subscribe Button and Navigation */}
+      <div className="flex justify-between items-center">
         {/* Subscribe Button */}
         <div className="flex justify-start">
             <div 
@@ -153,81 +189,102 @@ export default function YouTubeSection() {
             ></div>
         </div>
 
-        {/* Carousel */}
-        {loading ? (
+        {/* Navigation Arrows */}
+        <div className="flex items-center gap-3">
+            <button 
+                onClick={() => scroll('left')}
+                disabled={!showLeftArrow}
+                className="flex w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-sm items-center justify-center border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                aria-label="Previous videos"
+            >
+                <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-[#0f0f0f]" />
+            </button>
+            <button 
+                onClick={() => scroll('right')}
+                disabled={!showRightArrow}
+                className="flex w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-sm items-center justify-center border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                aria-label="Next videos"
+            >
+                <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-[#0f0f0f]" />
+            </button>
+        </div>
+      </div>
+
+      {/* Custom Horizontal Scroll Slider (YouTube Style) */}
+      {loading ? (
            // Skeleton / Loading State
            <div className="w-full h-[250px] bg-neutral-100 rounded-[16px] animate-pulse"></div>
-        ) : videos.length > 0 ? (
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-              dragFree: true,
-            }}
-            className="w-full relative"
-          >
-            <CarouselContent className="-ml-4">
-              {videos.map((video) => (
-                <CarouselItem 
+      ) : videos.length > 0 ? (
+          <div className="relative group/slider">
+            
+            {/* Scroll Container */}
+            <div 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                onMouseDown={handleMouseDown}
+                onMouseLeave={handleMouseLeave}
+                onMouseUp={handleMouseUp}
+                onMouseMove={handleMouseMove}
+                className={`flex overflow-x-auto gap-8 pb-8 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 items-start ${
+                    isDragging ? 'cursor-grabbing snap-none' : 'cursor-grab snap-x snap-proximity'
+                }`}
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {videos.slice(0, 15).map((video) => (
+                <div 
                     key={video.id} 
-                    className={`pl-4 ${video.isShort ? 'basis-[160px] md:basis-[200px]' : 'basis-[280px] md:basis-[360px] lg:basis-[400px]'}`}
+                    className="flex-none snap-start shrink-0 w-[300px] md:w-[320px] max-w-[90vw]"
                 >
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <div className="cursor-pointer group flex flex-col gap-3 p-3 rounded-xl hover:bg-neutral-50 transition-all border border-transparent hover:border-neutral-100 hover:shadow-sm h-full">
-                        <div className={`relative w-full ${video.isShort ? 'aspect-[9/16]' : 'aspect-video'} rounded-lg overflow-hidden bg-neutral-200`}>
+                      <div 
+                        onClick={() => setSelectedVideo(video.id)}
+                        className="cursor-pointer group flex flex-col gap-3"
+                      >
+                        {/* Thumbnail Container */}
+                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-200 shadow-sm isolate pointer-events-none">
                            <img 
-                            src={video.thumbnail} 
+                            src={`https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`} 
                             alt={video.title} 
-                            className={`w-full h-full ${video.isShort ? 'object-cover' : 'object-cover'} group-hover:scale-105 transition-transform duration-300`} 
+                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" 
                             onError={(e) => {
                                 // Fallback to mqdefault if maxres fails
-                                (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
+                                const target = e.target as HTMLImageElement;
+                                if (target.src.includes('maxresdefault')) {
+                                    target.src = `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
+                                }
                             }}
                            />
-                           <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="w-[48px] h-[48px] bg-white/90 rounded-full flex items-center justify-center shadow-sm">
-                                <Play className="w-6 h-6 ml-1 text-red-600" fill="currentColor" />
-                              </div>
-                           </div>
-                           {video.isShort && (
-                               <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 rounded text-[10px] text-white font-medium flex items-center gap-1">
-                                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M10 14.65v-5.3L15 12l-5 2.65zm7.77-4.33c-.77-.32-1.2-.5-1.2-.5L18 9.06c1.84-.96 2.53-3.23 1.56-5.06s-3.24-2.53-5.07-1.56L6 6.94c-1.29.68-2.07 2.04-2 3.49.07 1.42.93 2.67 2.22 3.25.03.01 1.2.5 1.2.5L6 14.93c-1.83.97-2.53 3.24-1.56 5.07.97 1.83 3.24 2.53 5.07 1.56l8.5-4.5c1.29-.68 2.07-2.04 2-3.49-.07-1.42-.93-2.67-2.22-3.25z"/></svg>
-                                   Shorts
-                               </div>
+                           {/* Duration Badge */}
+                           {video.length && (
+                             <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[12px] font-medium px-1.5 py-0.5 rounded-[4px] leading-none tracking-wide">
+                               {video.length}
+                             </div>
                            )}
+                           {/* Hover Overlay */}
+                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                         </div>
-                        <div className="flex flex-col gap-1.5">
-                           <h4 className="text-[14px] font-medium leading-snug line-clamp-2 text-[#141414] group-hover:text-red-600 transition-colors">
+                        
+                        {/* Video Info */}
+                        <div className="flex flex-col pr-2 gap-1">
+                           <h4 className="text-[16px] font-medium leading-[1.4] line-clamp-2 text-[#0f0f0f] group-hover:text-black" title={video.title}>
                              {video.title}
                            </h4>
-                           <span className="text-[12px] text-neutral-400">{video.date}</span>
+                           <div className="flex flex-wrap items-center text-[14px] text-[#606060] font-normal leading-tight">
+                             {video.viewCount && (
+                               <>
+                                 <span>{video.viewCount}</span>
+                                 <span className="mx-1">•</span>
+                               </>
+                             )}
+                             <span>{video.date}</span>
+                           </div>
                         </div>
                       </div>
-                    </DialogTrigger>
-                    <DialogContent className={`p-0 bg-black border-neutral-800 overflow-hidden ${video.isShort ? 'sm:max-w-[400px] h-[80vh]' : 'sm:max-w-[900px]'}`}>
-                      <DialogTitle className="sr-only">{video.title}</DialogTitle>
-                      <div className={`w-full ${video.isShort ? 'h-full' : 'aspect-video'}`}>
-                        <iframe 
-                            width="100%" 
-                            height="100%" 
-                            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`} 
-                            title={video.title}
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            allowFullScreen
-                        ></iframe>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </CarouselItem>
+                </div>
               ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden md:flex -left-4 bg-white hover:bg-neutral-100 border-neutral-200" />
-            <CarouselNext className="hidden md:flex -right-4 bg-white hover:bg-neutral-100 border-neutral-200" />
-          </Carousel>
+            </div>
+          </div>
         ) : (
-           // Fallback to Playlist if RSS fails
+           // Fallback to Playlist if RSS fails or no videos found
             <div className="w-full aspect-video rounded-[16px] overflow-hidden shadow-sm border border-neutral-200 bg-neutral-100">
                 <iframe 
                     width="100%" 
@@ -241,6 +298,84 @@ export default function YouTubeSection() {
             </div>
         )}
       </div>
+
+      {/* Custom Video Modal */}
+      {selectedVideo && (
+        <div 
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.85)',
+                zIndex: 999999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px'
+            }}
+            className="animate-in fade-in duration-200"
+        >
+            {/* Click outside to close */}
+            <div 
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                onClick={() => setSelectedVideo(null)}
+            />
+
+            {/* Modal Container */}
+            <div 
+                style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '800px',
+                    backgroundColor: '#000',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                }}
+            >
+                {/* Close Button */}
+                <button 
+                    onClick={() => setSelectedVideo(null)}
+                    style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        zIndex: 10,
+                        padding: '8px',
+                        color: 'white',
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        backdropFilter: 'blur(4px)'
+                    }}
+                    className="hover:bg-black/80 transition-colors"
+                    aria-label="Close video"
+                >
+                    <X size={20} />
+                </button>
+
+                {/* Video Container */}
+                <div style={{ aspectRatio: '16/9', width: '100%', backgroundColor: '#000' }}>
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={`https://www.youtube-nocookie.com/embed/${selectedVideo}?autoplay=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`} 
+                        title="YouTube video player"
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowFullScreen
+                        style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+      )}
     </section>
   );
 }

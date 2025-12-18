@@ -1,7 +1,10 @@
 import React from "react";
-import imgLuxuryCar from "figma:asset/004828c83645d790d50bcdaba3753610b0e1f7e5.png";
+import { Link, useLocation } from "react-router-dom";
+import imgLuxuryCar from "../assets/004828c83645d790d50bcdaba3753610b0e1f7e5.png";
 
 export default function Hero() {
+  const location = useLocation();
+
   return (
     <section className="relative w-full h-[100dvh] min-h-[600px] max-h-[900px] overflow-hidden bg-[#141414]">
       {/* Background Image */}
@@ -32,12 +35,18 @@ export default function Hero() {
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row gap-[12px] sm:gap-[16px] w-full sm:w-auto mt-2">
-            <button className="bg-white text-[#141414] px-[24px] py-[16px] md:py-[20px] rounded-[12px] text-[15px] md:text-[16px] font-medium hover:bg-neutral-100 active:scale-[0.98] transition-all text-center shadow-lg shadow-black/10">
+            <Link 
+              to="/catalog"
+              className="bg-white text-[#141414] px-[24px] py-[16px] md:py-[20px] rounded-[12px] text-[15px] md:text-[16px] font-medium hover:bg-neutral-100 active:scale-[0.98] transition-all text-center shadow-lg shadow-black/10 inline-block"
+            >
               Смотреть каталог
-            </button>
-            <button className="bg-[rgba(255,255,255,0.1)] backdrop-blur-md border border-[rgba(255,255,255,0.3)] text-white px-[24px] py-[16px] md:py-[20px] rounded-[12px] text-[15px] md:text-[16px] font-medium hover:bg-[rgba(255,255,255,0.2)] active:scale-[0.98] transition-all text-center">
+            </Link>
+            <Link 
+              to="/#contacts"
+              className="bg-[rgba(255,255,255,0.1)] backdrop-blur-md border border-[rgba(255,255,255,0.3)] text-white px-[24px] py-[16px] md:py-[20px] rounded-[12px] text-[15px] md:text-[16px] font-medium hover:bg-[rgba(255,255,255,0.2)] active:scale-[0.98] transition-all text-center inline-block"
+            >
               Связаться с нами
-            </button>
+            </Link>
           </div>
         </div>
       </div>

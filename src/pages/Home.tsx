@@ -9,11 +9,19 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <YouTubeSection />
-      <CatalogSection />
-      <ServicesSection />
+      <div id="youtube" className="scroll-mt-[100px]">
+        <YouTubeSection />
+      </div>
+      <div id="catalog" className="scroll-mt-[100px]">
+        <CatalogSection />
+      </div>
+      <div id="services" className="scroll-mt-[100px]">
+        <ServicesSection />
+      </div>
       <FeaturesSection />
-      <ContactSection />
+      <div id="contacts" className="scroll-mt-[100px]">
+        <ContactSection />
+      </div>
     </>
   );
 }

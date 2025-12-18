@@ -226,6 +226,69 @@ app.post('/api/upload/images', requireAuth, upload.array('images'), (req, res) =
     res.json({ paths: uploadPaths });
 });
 
+// YouTube Videos Proxy
+app.get('/api/youtube-videos', async (req, res) => {
+    try {
+        const CHANNEL_ID = 'UCoMu2BkIcQHKkUy9dr3gNdQ';
+        const url = `https://www.youtube.com/channel/${CHANNEL_ID}/videos`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`YouTube responded with ${response.status}`);
+        }
+
+        const html = await response.text();
+        
+        // Extract ytInitialData
+        const match = html.match(/var ytInitialData = ({.*?});/s);
+        if (!match || !match[1]) {
+            throw new Error('Could not find ytInitialData');
+        }
+
+        const data = JSON.parse(match[1]);
+        
+        // Traverse JSON to find video items
+        // Path: contents.twoColumnBrowseResultsRenderer.tabs[1].tabRenderer.content.richGridRenderer.contents
+        const tabs = data.contents?.twoColumnBrowseResultsRenderer?.tabs;
+        const videosTab = tabs?.find((t: any) => t.tabRenderer?.title === 'Videos' || t.tabRenderer?.content?.richGridRenderer);
+        
+        if (!videosTab) {
+            throw new Error('Could not find Videos tab');
+        }
+
+        const contents = videosTab.tabRenderer.content.richGridRenderer.contents;
+        
+        const videos = contents
+            .filter((item: any) => item.richItemRenderer?.content?.videoRenderer)
+            .map((item: any) => {
+                const video = item.richItemRenderer.content.videoRenderer;
+                return {
+                    id: video.videoId,
+                    title: video.title?.runs?.[0]?.text,
+                    thumbnail: video.thumbnail?.thumbnails?.[video.thumbnail.thumbnails.length - 1]?.url, // High res
+                    date: video.publishedTimeText?.simpleText || 'Recently',
+                    viewCount: video.viewCountText?.simpleText,
+                    length: video.lengthText?.simpleText
+                };
+            })
+            // Extra filter for Shorts just in case (though /videos tab usually excludes them)
+            .filter((v: any) => v.id && v.title); 
+
+        // Return top 20 videos
+        res.json(videos.slice(0, 20));
+
+    } catch (error) {
+        console.error('YouTube fetch error:', error);
+        res.status(500).json({ error: 'Failed to fetch videos' });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

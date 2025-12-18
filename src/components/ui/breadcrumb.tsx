@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot@1.1.2";
-import { ChevronRight, MoreHorizontal } from "lucide-react@0.487.0";
+import { Slot } from "@radix-ui/react-slot";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "./utils";
 
@@ -44,7 +44,7 @@ function BreadcrumbLink({
     <Comp
       data-slot="breadcrumb-link"
       className={cn(
-        "text-[#141414] bg-neutral-100 px-[10px] py-[6px] rounded-[10px] border border-[#e6e6e6] hover:bg-neutral-200 hover:text-[#141414] transition-colors",
+        "text-[#141414] bg-neutral-100 px-[16px] py-[8px] rounded-[10px] border border-[#e6e6e6] hover:bg-neutral-200 hover:text-[#141414] transition-colors",
         className,
       )}
       {...props}
@@ -60,7 +60,7 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
       aria-disabled="true"
       aria-current="page"
       className={cn(
-        "bg-[#141414] text-white font-normal px-[10px] py-[6px] rounded-[10px] border border-[#141414]",
+        "bg-[#141414] text-white font-normal px-[16px] py-[8px] rounded-[10px] border border-[#141414]",
         className,
       )}
       {...props}

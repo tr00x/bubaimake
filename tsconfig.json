@@ -3,8 +3,11 @@
         "target": "ES2020",
         "module": "commonjs",
         "lib": [
-            "ES2020"
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
         ],
+        "jsx": "react-jsx",
         "outDir": "dist",
         "rootDir": ".",
         "strict": true,
@@ -15,7 +18,8 @@
     "include": [
         "server/**/*",
         "prisma/**/*",
-        "vite.config.ts"
+        "vite.config.ts",
+        "src/**/*"
     ],
     "exclude": [
         "node_modules"

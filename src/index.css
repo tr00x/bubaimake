@@ -2406,6 +2406,7 @@
 
 html {
   font-size: var(--font-size);
+  scroll-behavior: smooth;
 }
 
 @property --tw-translate-x {
@@ -2759,12 +2760,12 @@ html {
   position: relative;
   display: inline-block;
   height: 50px;
-  width: 240px; /* Fixed width as per example, adjusted for text */
+  /* width: 240px; Removed fixed width to allow w-full to work or natural width */
   line-height: 50px;
   padding: 0;
   border-radius: 25px;
   background: #141414;
-  box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.7);
+  /* box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.7); Removed shadow */
   transition: background 0.3s ease;
   text-decoration: none;
   cursor: pointer;
@@ -2772,7 +2773,7 @@ html {
 }
 
 .btn-slide:active {
-  box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.7);
+  /* box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.7); Removed shadow */
   transform: scale(0.96);
 }
 

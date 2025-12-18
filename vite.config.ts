@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
-  base: '/dubaicars/',
   plugins: [react()],
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -60,6 +59,7 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

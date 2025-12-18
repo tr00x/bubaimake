@@ -1,9 +1,13 @@
 import Header from "./components/Header";
-import { Outlet } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
+import ScrollToAnchor from "./components/ScrollToAnchor";
+import { Toaster } from "./components/ui/sonner";
 
 export default function App() {
   return (
     <div className="bg-white min-h-screen font-sans text-[#141414] antialiased selection:bg-red-500 selection:text-white">
+      <ScrollToAnchor />
+      <Toaster />
       <Header />
       <main>
         <Outlet />
@@ -21,15 +25,15 @@ export default function App() {
                 <div className="flex gap-12 flex-wrap">
                     <div className="flex flex-col gap-4">
                         <span className="font-semibold">Компания</span>
-                        <a href="/features" className="text-neutral-400 hover:text-white transition-colors text-sm">О нас</a>
-                        <a href="/contacts" className="text-neutral-400 hover:text-white transition-colors text-sm">Контакты</a>
+                        <Link to="/features" className="text-neutral-400 hover:text-white transition-colors text-sm">О нас</Link>
+                        <Link to="/#contacts" className="text-neutral-400 hover:text-white transition-colors text-sm">Контакты</Link>
                         <a href="#" className="text-neutral-400 hover:text-white transition-colors text-sm">Вакансии</a>
                     </div>
                     <div className="flex flex-col gap-4">
                         <span className="font-semibold">Услуги</span>
-                        <a href="/catalog" className="text-neutral-400 hover:text-white transition-colors text-sm">Каталог авто</a>
-                        <a href="/services" className="text-neutral-400 hover:text-white transition-colors text-sm">Логистика</a>
-                        <a href="/services" className="text-neutral-400 hover:text-white transition-colors text-sm">Таможня</a>
+                        <Link to="/catalog" className="text-neutral-400 hover:text-white transition-colors text-sm">Каталог авто</Link>
+                        <Link to="/#services" className="text-neutral-400 hover:text-white transition-colors text-sm">Логистика</Link>
+                        <Link to="/#services" className="text-neutral-400 hover:text-white transition-colors text-sm">Таможня</Link>
                     </div>
                 </div>
             </div>
@@ -37,11 +41,8 @@ export default function App() {
             <div className="h-px bg-neutral-800 w-full" />
             
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500">
-                <p>© 2024 Mashyn Bazar. All rights reserved.</p>
-                <div className="flex gap-6">
-                    <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                    <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                </div>
+                <p>© 2026 Dubai Mashyn Bazar. All rights reserved.</p>
+                
             </div>
         </div>
       </footer>

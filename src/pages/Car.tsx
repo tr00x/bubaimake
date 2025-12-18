@@ -9,9 +9,18 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "../components/ui/breadcrumb";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "../components/ui/carousel";
 import { ArrowRight, ArrowLeft, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck } from "lucide-react";
 import client from "../api/client";
 import { CarCard } from "../components/CatalogSection";
+import ManagerContactModal from "../components/ManagerContactModal";
 
 type CarData = {
   id: string;
@@ -38,6 +47,7 @@ export default function CarPage() {
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showSticky, setShowSticky] = useState(false);
+  const [api, setApi] = useState<CarouselApi>();
   
   // Ref for similar cars scroll container
   const similarCarsRef = useRef<HTMLDivElement>(null);
@@ -100,6 +110,19 @@ export default function CarPage() {
 
   return (
     <section className="car-page-section max-w-[1400px] mx-auto px-4 md:px-[40px] pb-[100px] md:pb-[140px] flex flex-col gap-[24px]">
+      <style>{`
+        .car-more-photos-slide {
+          flex: 0 0 100%;
+          max-width: 100%;
+        }
+        @media (min-width: 1024px) {
+          .car-more-photos-slide {
+            flex: 0 0 25%;
+            max-width: 50%;
+          }
+        }
+      `}</style>
+      <div className="w-full h-[100px] md:h-[140px]" />
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -131,13 +154,6 @@ export default function CarPage() {
               <div className="px-[20px] py-[10px] bg-[#141414] text-white rounded-[12px] font-semibold tracking-tight shadow-lg shadow-black/10">
                 {priceStr}
               </div>
-              <a href="#" className="btn-slide">
-                <span className="circle">
-                  <Mail className="w-5 h-5" />
-                </span>
-                <span className="title">Написать менеджеру</span>
-                <span className="title title-hover">Написать менеджеру</span>
-              </a>
             </div>
           </div>
         </div>
@@ -159,11 +175,7 @@ export default function CarPage() {
               </span>
             ))}
           </div>
-          <div className="flex flex-wrap gap-[8px]">
-            <span className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">{car.year}</span>
-            <span className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">{car.fuelType}</span>
-            <span className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">{car.transmission}</span>
-          </div>
+
 
           <div className="grid grid-cols-2 gap-[12px] py-[12px] border-t border-neutral-200">
             <div className="flex flex-col gap-[2px]">
@@ -214,13 +226,7 @@ export default function CarPage() {
             <div className="px-[20px] py-[10px] bg-[#141414] text-white rounded-[12px] font-semibold tracking-tight shadow-lg shadow-black/10">
               {priceStr}
             </div>
-            <button type="button" className="btn-slide">
-              <span className="circle">
-                <Mail className="w-5 h-5" />
-              </span>
-              <span className="title">Написать менеджеру</span>
-              <span className="title title-hover">Написать менеджеру</span>
-            </button>
+
           </div>
         </div>
 
@@ -240,14 +246,14 @@ export default function CarPage() {
           <h2 className="text-[20px] md:text-[24px] font-semibold">Больше фото</h2>
           <div className="flex gap-2">
             <button
-              onClick={() => setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+              onClick={() => api?.scrollPrev()}
               className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
               aria-label="Previous image"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+              onClick={() => api?.scrollNext()}
               className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
               aria-label="Next image"
             >
@@ -255,23 +261,43 @@ export default function CarPage() {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {images.map((src, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveImageIndex(idx)}
-              className={`relative aspect-[4/3] w-full overflow-hidden rounded-[12px] transition-all hover:opacity-90 ${idx === activeImageIndex
-                  ? "ring-2 ring-[#141414] ring-offset-2"
-                  : "border border-neutral-100 hover:border-neutral-300"
-                }`}
-            >
-              <img
-                src={src}
-                alt={`${car.title} ${idx + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </button>
-          ))}
+        
+        <div className="px-1">
+          <Carousel
+            setApi={setApi}
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4 lg:-ml-6">
+              {images.map((src, idx) => (
+                <CarouselItem key={idx} className="car-more-photos-slide pl-4 lg:pl-6">
+                  <div className="relative w-full">
+                    <button
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative aspect-[4/3] w-full overflow-hidden rounded-[12px] transition-all hover:opacity-90 ${
+                        idx === activeImageIndex
+                          ? "ring-2 ring-[#141414] ring-offset-2"
+                          : "border border-neutral-100 hover:border-neutral-300"
+                      }`}
+                    >
+                      <img
+                        src={src}
+                        alt={`${car.title} ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="hidden md:block">
+              <CarouselPrevious className="-left-4 lg:-left-12" />
+              <CarouselNext className="-right-4 lg:-right-12" />
+            </div>
+          </Carousel>
         </div>
       </div>
 
@@ -282,17 +308,7 @@ export default function CarPage() {
             <p className="text-neutral-600 leading-relaxed whitespace-pre-line">{car.descriptionMd?.split("**Комплектация:**")[0]}</p>
           </div>
 
-          <div>
-            <h2 className="text-[20px] md:text-[24px] font-semibold mb-[16px]">Комплектация</h2>
-            {/* Parse MD bullet points for features */}
-            <div className="flex flex-wrap gap-[8px]">
-              {car.descriptionMd?.split("**Комплектация:**")[1]?.split('\n').filter(l => l.trim().startsWith('*')).map((f, i) => (
-                <span key={i} className="text-[13px] text-neutral-600 bg-neutral-100 px-[10px] py-[6px] rounded-[8px] border border-neutral-200">
-                  {f.replace('*', '').trim()}
-                </span>
-              ))}
-            </div>
-          </div>
+
         </div>
 
         <div className="flex flex-col gap-[12px]">
@@ -305,33 +321,35 @@ export default function CarPage() {
             <div className="w-full h-px bg-neutral-100"></div>
 
             <ul className="flex flex-col gap-4">
-              <li className="flex items-center gap-3 text-[14px] text-[#141414]">
+              <li className="flex items-center gap-2 text-[14px] text-[#141414]">
                 <UserCheck className="w-5 h-5 text-neutral-400" />
                 <span className="font-medium">Персональный менеджер</span>
               </li>
-              <li className="flex items-center gap-3 text-[14px] text-[#141414]">
+              <li className="flex items-center gap-2 text-[14px] text-[#141414]">
                 <FileCheck className="w-5 h-5 text-neutral-400" />
-                <span className="font-medium">Прозрачные условия сделки</span>
+                <span className="font-medium"> Прозрачные условия сделки</span>
               </li>
-              <li className="flex items-center gap-3 text-[14px] text-[#141414]">
-                <ShieldCheck className="w-5 h-5 text-neutral-400" />
-                <span className="font-medium">Документы и страхование</span>
+              <li className="flex items-center gap-2 text-[14px] text-[#141414]">
+                <ShieldCheck className="w-5 h-5 text-neutral-400"  />
+                <span className="font-medium"> Документы и страхование</span>
               </li>
             </ul>
 
-            <a href="#" className="mt-2 btn-slide w-full justify-center group">
-              <span className="circle group-hover:bg-white group-hover:text-[#141414]">
-                <Mail className="w-5 h-5" />
-              </span>
-              <span className="title">Написать менеджеру</span>
-              <span className="title title-hover">Написать менеджеру</span>
-            </a>
+            <ManagerContactModal carTitle={car.title} carId={car.id}>
+              <button className="mt-2 btn-slide w-full justify-center group">
+                <span className="circle group-hover:bg-white group-hover:text-[#141414]">
+                  <Mail className="w-5 h-5" />
+                </span>
+                <span className="title">Написать менеджеру</span>
+                <span className="title title-hover">Написать менеджеру</span>
+              </button>
+            </ManagerContactModal>
           </div>
         </div>
       </div>
 
       {similarCars.length > 0 && (
-        <div className="flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[16px]" style={{ marginTop: "100px", marginBottom: "100px" }}>
           <div className="flex items-center justify-between">
             <h2 className="text-[20px] md:text-[24px] font-semibold">Похожие автомобили</h2>
             <div className="flex gap-2">
