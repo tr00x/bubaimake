@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { motion, Variants } from "framer-motion";
 import imgBmwM5Competition from "../assets/5ff7312c3dc0a1014ede77a74beefcf8924374ee.png";
 import {
   Breadcrumb,
@@ -17,9 +18,9 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "../components/ui/carousel";
-import { ArrowRight, ArrowLeft, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck, DollarSign } from "lucide-react";
 import client from "../api/client";
-import { CarCard } from "../components/CatalogSection";
+import { CarCard } from "../components/CarCard";
 import ManagerContactModal from "../components/ManagerContactModal";
 
 type CarData = {
@@ -40,6 +41,26 @@ type CarData = {
   images: { pathOrUrl: string; isMain: boolean }[];
 };
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+};
+
 export default function CarPage() {
   const { slug } = useParams(); // Using ID as slug
   const [car, setCar] = useState<CarData | null>(null);
@@ -48,7 +69,61 @@ export default function CarPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showSticky, setShowSticky] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
-  
+
+  useEffect(() => {
+    if (!api) return;
+    // We don't listen to 'select' to avoid conflict when carousel items fit on screen (and api.selectedScrollSnap() stays 0)
+    // allowing us to manually control activeImageIndex for the main image.
+  }, [api]);
+
+  const handlePrevImage = () => {
+    if (!images.length) return;
+    setActiveImageIndex((prev) => {
+      const newIndex = prev === 0 ? images.length - 1 : prev - 1;
+      api?.scrollTo(newIndex); 
+      return newIndex;
+    });
+  };
+
+  const handleNextImage = () => {
+    if (!images.length) return;
+    setActiveImageIndex((prev) => {
+      const newIndex = (prev + 1) % images.length;
+      api?.scrollNext(); // Use scrollNext for smooth looping
+      return newIndex;
+    });
+  };
+
+  // Swipe handlers for main image
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      handleNextImage();
+    } else if (isRightSwipe) {
+      handlePrevImage();
+    }
+    
+    // Reset
+    touchEndX.current = null;
+    touchStartX.current = null;
+  };
+
   // Ref for similar cars scroll container
   const similarCarsRef = useRef<HTMLDivElement>(null);
 
@@ -109,67 +184,82 @@ export default function CarPage() {
   const priceStr = `$${car.priceUsd.toLocaleString()}`;
 
   return (
-    <section className="car-page-section max-w-[1400px] mx-auto px-4 md:px-[40px] pb-[100px] md:pb-[140px] flex flex-col gap-[24px]">
-      <style>{`
-        .car-more-photos-slide {
-          flex: 0 0 100%;
-          max-width: 100%;
-        }
-        @media (min-width: 1024px) {
-          .car-more-photos-slide {
-            flex: 0 0 25%;
-            max-width: 50%;
-          }
-        }
-      `}</style>
-      <div className="w-full h-[100px] md:h-[140px]" />
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/">Главная</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/catalog">Каталог</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{car.title}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <motion.section 
+      className="max-w-[1400px] mx-auto px-4 md:px-10 pt-24 md:pt-32 pb-24 md:pb-36 flex flex-col gap-6"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div variants={itemVariants}>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Главная</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/catalog">Каталог</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{car.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </motion.div>
 
       {showSticky && (
-        <div className="sticky top-[72px] z-40">
-          <div className="bg-white/90 backdrop-blur-md border border-neutral-200 rounded-[12px] px-[16px] py-[12px] flex items-center justify-between shadow-lg shadow-black/5">
-            <div className="flex items-center gap-[12px]">
-              <span className="text-[15px] font-medium text-[#141414]">{car.title}</span>
-              <div className="hidden md:flex gap-[8px]">
-                {tagsList.map((t) => (
-                  <span key={t} className={`px-[10px] py-[4px] rounded-[4px] border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-neutral-200 text-[#141414]"}`}>{t}</span>
-                ))}
+        <motion.div 
+          className="sticky top-[72px] z-40"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
+          <div className="bg-background/90 backdrop-blur-md border border-border rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="flex flex-col gap-1 md:gap-0 md:flex-row md:items-center">
+              <span className="text-[15px] font-bold text-foreground mr-4">{car.title}</span>
+              
+              <div className="flex items-center gap-3 text-xs md:text-sm text-muted-foreground font-medium">
+                <span className="flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
+                   <Calendar className="w-3.5 h-3.5" />
+                   {car.year}
+                </span>
+                <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
+                   <Gauge className="w-3.5 h-3.5" />
+                   {car.horsepower} л.с.
+                </span>
+                <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
+                   <Fuel className="w-3.5 h-3.5" />
+                   {car.fuelType}
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-[12px] ml-auto">
-              <div className="px-[20px] py-[10px] bg-[#141414] text-white rounded-[12px] font-semibold tracking-tight shadow-lg shadow-black/10">
+
+            <div className="flex items-center gap-3 ml-auto">
+              <div className="hidden md:flex gap-2">
+                {tagsList.map((t) => (
+                  <span key={t} className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-border text-foreground"}`}>{t}</span>
+                ))}
+              </div>
+              <div className="px-5 py-2.5 bg-foreground text-background rounded-xl font-semibold tracking-tight whitespace-nowrap">
                 {priceStr}
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
-        <div className="flex flex-col gap-[20px]">
-          <h1 className="text-[32px] md:text-[40px] font-medium text-[#141414] leading-tight">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div className="flex flex-col gap-5" variants={itemVariants}>
+          <h1 className="text-3xl md:text-4xl font-medium text-foreground leading-tight">
             {car.title}
           </h1>
-          <div className="flex flex-wrap gap-[8px]">
+          <div className="flex flex-wrap gap-2">
             {tagsList.map((t) => (
               <span
                 key={t}
-                className={`px-[10px] py-[4px] rounded-[4px] border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-neutral-200 text-[#141414]"}`}
+                className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-border text-foreground"}`}
               >
                 {t}
               </span>
@@ -177,84 +267,94 @@ export default function CarPage() {
           </div>
 
 
-          <div className="grid grid-cols-2 gap-[12px] py-[12px] border-t border-neutral-200">
-            <div className="flex flex-col gap-[2px]">
-              <div className="flex items-center gap-[6px] text-neutral-500">
+          <div className="grid grid-cols-2 gap-3 py-3 border-t border-border">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Gauge className="w-4 h-4" />
-                <span className="text-[12px]">Макс. скорость</span>
+                <span className="text-xs">Макс. скорость</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.topSpeed ? `${car.topSpeed} км/ч` : "—"}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `${car.topSpeed} км/ч` : "—"}</span>
             </div>
-            <div className="flex flex-col gap-[2px]">
-              <div className="flex items-center gap-[6px] text-neutral-500">
-                <Calendar className="w-4 h-4" />
-                <span className="text-[12px]">Год выпуска</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Gauge className="w-4 h-4" />
+                <span className="text-xs">Разгон 0-100</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.year}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `3.5 сек` : "—"}</span>
             </div>
-            <div className="flex flex-col gap-[2px]">
-              <div className="flex items-center gap-[6px] text-neutral-500">
-                <Cog className="w-4 h-4" />
-                <span className="text-[12px]">КПП</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Gauge className="w-4 h-4" />
+                <span className="text-xs">Мощность</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.transmission}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.horsepower} л.с.</span>
             </div>
-            <div className="flex flex-col gap-[2px]">
-              <div className="flex items-center gap-[6px] text-neutral-500">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Fuel className="w-4 h-4" />
-                <span className="text-[12px]">Тип топлива</span>
+                <span className="text-xs">Тип топлива</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.fuelType}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.fuelType}</span>
             </div>
-            <div className="flex flex-col gap-[2px]">
-              <div className="flex items-center gap-[6px] text-neutral-500">
-                <Gauge className="w-4 h-4" />
-                <span className="text-[12px]">Мощность</span>
+             <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="w-4 h-4" />
+                <span className="text-xs">Год выпуска</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.horsepower} л.с.</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.year}</span>
             </div>
-            <div className="flex flex-col gap-[2px]">
-              <div className="flex items-center gap-[6px] text-neutral-500">
+             <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <BadgeCheck className="w-4 h-4" />
-                <span className="text-[12px]">Состояние</span>
+                <span className="text-xs">Состояние</span>
               </div>
-              <span className="text-[18px] md:text-[20px] font-medium text-[#141414]">{car.condition}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.condition === 'new' ? 'Новый' : 'С пробегом'}</span>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-[12px]">
-            <div className="px-[20px] py-[10px] bg-[#141414] text-white rounded-[12px] font-semibold tracking-tight shadow-lg shadow-black/10">
-              {priceStr}
+          <div className="mt-auto pt-4 border-t border-border">
+             <div className="flex items-center gap-2 text-muted-foreground">
+                
+                <span className="text-sm font-medium">Стоимость</span>
+              </div>
+              <span className="text-[15px] leading-none sm:text-4xl font-bold text-foreground tracking-tight">{priceStr}</span>
             </div>
+        </motion.div>
 
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[12px]">
-            <img
+        <motion.div className="relative" variants={itemVariants}>
+          <div 
+            className="relative aspect-[4/3] w-full overflow-hidden rounded-xl touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <motion.img
+              key={activeImageIndex}
               src={images[activeImageIndex]}
               alt={car.title}
               className="w-full h-full object-cover"
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
             />
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="flex flex-col gap-[12px]">
+      <motion.div className="flex flex-col gap-3" variants={itemVariants}>
         <div className="flex items-center justify-between">
-          <h2 className="text-[20px] md:text-[24px] font-semibold">Больше фото</h2>
+          <h2 className="text-xl md:text-2xl font-semibold">Больше фото</h2>
           <div className="flex gap-2">
             <button
-              onClick={() => api?.scrollPrev()}
-              className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+              onClick={handlePrevImage}
+              className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
               aria-label="Previous image"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <button
-              onClick={() => api?.scrollNext()}
-              className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+              onClick={handleNextImage}
+              className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
               aria-label="Next image"
             >
               <ArrowRight className="w-4 h-4" />
@@ -271,16 +371,19 @@ export default function CarPage() {
             }}
             className="w-full"
           >
-            <CarouselContent className="-ml-4 lg:-ml-6">
+            <CarouselContent className="-ml-2 md:-ml-4 lg:-ml-6">
               {images.map((src, idx) => (
-                <CarouselItem key={idx} className="car-more-photos-slide pl-4 lg:pl-6">
-                  <div className="relative w-full">
+                <CarouselItem key={idx} className="pl-2 md:pl-4 lg:pl-6 basis-1/4">
+                  <div className="relative w-full p-1">
                     <button
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`relative aspect-[4/3] w-full overflow-hidden rounded-[12px] transition-all hover:opacity-90 ${
+                      onClick={() => {
+                        setActiveImageIndex(idx);
+                        api?.scrollTo(idx);
+                      }}
+                      className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl transition-all hover:opacity-90 ${
                         idx === activeImageIndex
-                          ? "ring-2 ring-[#141414] ring-offset-2"
-                          : "border border-neutral-100 hover:border-neutral-300"
+                          ? "ring-2 ring-foreground ring-offset-2"
+                          : "border border-border hover:border-muted-foreground"
                       }`}
                     >
                       <img
@@ -299,81 +402,80 @@ export default function CarPage() {
             </div>
           </Carousel>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]" style={{ marginTop: "30px" }}>
-        <div className="lg:col-span-2 flex flex-col gap-[24px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <motion.div className="lg:col-span-2 flex flex-col gap-6" variants={itemVariants}>
           <div>
-            <h2 className="text-[20px] md:text-[24px] font-semibold mb-[16px]">Описание</h2>
-            <p className="text-neutral-600 leading-relaxed whitespace-pre-line">{car.descriptionMd?.split("**Комплектация:**")[0]}</p>
+            <h2 className="text-xl md:text-2xl font-semibold mb-4">Описание</h2>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{car.descriptionMd?.split("**Комплектация:**")[0]}</p>
           </div>
 
 
-        </div>
+        </motion.div>
 
-        <div className="flex flex-col gap-[12px]">
-          <div className="rounded-[20px] border border-neutral-100 p-[24px] bg-white sticky top-[100px] flex flex-col gap-6">
+        <motion.div className="flex flex-col gap-3" variants={itemVariants}>
+          <div className="rounded-xl border border-border p-6 bg-background sticky top-[100px] flex flex-col gap-6">
             <div>
-              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest">Консультация</span>
-              <p className="text-[18px] font-medium mt-3 text-[#141414] leading-snug">Рассчитаем доставку и растаможку, подберём лучшее предложение</p>
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Консультация</span>
+              <p className="text-lg font-medium mt-3 text-foreground leading-snug">Рассчитаем доставку и растаможку, подберём лучшее предложение</p>
             </div>
             
-            <div className="w-full h-px bg-neutral-100"></div>
+            <div className="w-full h-px bg-border"></div>
 
             <ul className="flex flex-col gap-4">
-              <li className="flex items-center gap-2 text-[14px] text-[#141414]">
-                <UserCheck className="w-5 h-5 text-neutral-400" />
+              <li className="flex items-center gap-2 text-sm text-foreground">
+                <UserCheck className="w-5 h-5 text-muted-foreground" />
                 <span className="font-medium">Персональный менеджер</span>
               </li>
-              <li className="flex items-center gap-2 text-[14px] text-[#141414]">
-                <FileCheck className="w-5 h-5 text-neutral-400" />
+              <li className="flex items-center gap-2 text-sm text-foreground">
+                <FileCheck className="w-5 h-5 text-muted-foreground" />
                 <span className="font-medium"> Прозрачные условия сделки</span>
               </li>
-              <li className="flex items-center gap-2 text-[14px] text-[#141414]">
-                <ShieldCheck className="w-5 h-5 text-neutral-400"  />
+              <li className="flex items-center gap-2 text-sm text-foreground">
+                <ShieldCheck className="w-5 h-5 text-muted-foreground"  />
                 <span className="font-medium"> Документы и страхование</span>
               </li>
             </ul>
 
-            <ManagerContactModal carTitle={car.title} carId={car.id}>
-              <button className="mt-2 btn-slide w-full justify-center group">
-                <span className="circle group-hover:bg-white group-hover:text-[#141414]">
-                  <Mail className="w-5 h-5" />
-                </span>
-                <span className="title">Написать менеджеру</span>
-                <span className="title title-hover">Написать менеджеру</span>
+            <ManagerContactModal carTitle={car.title} carId={car.id} carPrice={priceStr} carImage={images[0]}>
+              <button className="mt-4 w-full group relative overflow-hidden rounded-xl bg-foreground text-background py-4 font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]">
+                <div className="relative z-10 flex items-center justify-center gap-2">
+                  <Mail className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:-rotate-12" />
+                  <span>Написать менеджеру</span>
+                </div>
+                <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
               </button>
             </ManagerContactModal>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {similarCars.length > 0 && (
-        <div className="flex flex-col gap-[16px]" style={{ marginTop: "100px", marginBottom: "100px" }}>
+        <motion.div className="flex flex-col gap-4 mt-24" variants={itemVariants}>
           <div className="flex items-center justify-between">
-            <h2 className="text-[20px] md:text-[24px] font-semibold">Похожие автомобили</h2>
+            <h2 className="text-xl md:text-2xl font-semibold">Похожие автомобили</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => scrollSimilar('left')}
-                className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
                 aria-label="Scroll left"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={() => scrollSimilar('right')}
-                className="w-[36px] h-[36px] flex items-center justify-center rounded-full border border-neutral-200 bg-white text-[#141414] hover:bg-neutral-50 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full border border-border bg-background text-foreground hover:bg-secondary transition-colors"
                 aria-label="Scroll right"
               >
-                <ArrowRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
           
           <div 
             ref={similarCarsRef}
-            className="flex gap-[24px] overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
           >
             {similarCars.map((item) => {
               const mainImg = item.images?.find(i => i.isMain)?.pathOrUrl || item.images?.[0]?.pathOrUrl || imgBmwM5Competition;
@@ -392,8 +494,8 @@ export default function CarPage() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
       )}
-    </section>
+    </motion.section>
   );
 }

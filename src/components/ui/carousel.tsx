@@ -3,8 +3,8 @@
 import * as React from "react";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
-} from "embla-carousel-react@8.6.0";
-// icons removed; using span arrows
+} from "embla-carousel-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "./utils";
 import { Button } from "./button";
@@ -196,7 +196,8 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <span aria-hidden="true">←</span>
+      <ChevronLeft className="h-4 w-4" />
+      <span className="sr-only">Previous slide</span>
     </Button>
   );
 }
@@ -226,7 +227,8 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <span aria-hidden="true">→</span>
+      <ChevronRight className="h-4 w-4" />
+      <span className="sr-only">Next slide</span>
     </Button>
   );
 }

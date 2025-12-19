@@ -1,27 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import client from "../api/client";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "../components/ui/table";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Plus, Search, Pencil, Trash2, MoreHorizontal, Car as CarSymbol } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import "./admin.css";
 
 type CarSummary = {
     id: string;
@@ -59,116 +40,135 @@ export default function AdminCarList() {
         car.status.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) return <div className="p-8 text-center text-neutral-500">Loading inventory...</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading inventory...</div>;
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-neutral-200 pb-6">
+            <div className="admin-page-header">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#141414]">Inventory</h2>
-                    <p className="text-neutral-500 text-base mt-1">Manage your vehicle listings and availability.</p>
+                    <h2 className="admin-page-title">Inventory</h2>
+                    <p className="admin-page-desc">Manage your vehicle listings.</p>
                 </div>
-                <Link to="/admin/cars/new">
-                    <Button className="h-10 px-4 py-2 bg-[#141414] hover:bg-black text-white rounded-md shadow-sm transition-transform active:scale-95">
-                        <Plus className="w-4 h-4 mr-2" />
-                        <span className="font-medium">Add Vehicle</span>
-                    </Button>
+                <Link 
+                    to="/admin/cars/new"
+                    className="admin-action-btn"
+                >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Vehicle
                 </Link>
             </div>
 
-            <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-neutral-200 shadow-sm focus-within:ring-2 focus-within:ring-black/5 transition-all">
-                <Search className="w-4 h-4 text-neutral-400" />
-                <Input
-                    placeholder="Search by make, model, or status..."
-                    className="max-w-md border-none shadow-none focus-visible:ring-0 p-0 h-auto text-sm placeholder:text-neutral-400"
+            <div className="admin-search-container">
+                <Search className="admin-search-icon" />
+                <input
+                    type="text"
+                    placeholder="Search by make, model..."
+                    className="admin-search-input"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
 
-            <div className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-neutral-50/50 hover:bg-neutral-50/50">
-                            <TableHead className="w-[100px] py-3 pl-4">Image</TableHead>
-                            <TableHead className="py-3">Vehicle Details</TableHead>
-                            <TableHead className="py-3">Status</TableHead>
-                            <TableHead className="text-right py-3">Price</TableHead>
-                            <TableHead className="w-[120px] py-3 pr-4 text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredCars.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-neutral-500 text-sm">
-                                    No vehicles found matching your search.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredCars.map(car => {
-                                const mainImage = car.images?.find(i => i.isMain)?.pathOrUrl || car.images?.[0]?.pathOrUrl;
+            <div className="admin-table-container">
+                <div className="admin-table-wrapper">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th scope="col" className="admin-table-image-cell">
+                                    Image
+                                </th>
+                                <th scope="col">
+                                    Vehicle Details
+                                </th>
+                                <th scope="col">
+                                    Status
+                                </th>
+                                <th scope="col">
+                                    Price
+                                </th>
+                                <th scope="col" className="admin-actions-cell">
+                                    <span className="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredCars.map((car) => {
+                                const mainImage = car.images.find(img => img.isMain) || car.images[0];
+                                // Ensure we handle both relative and absolute paths correctly
+                                let imageUrl = '';
+                                if (mainImage) {
+                                    if (mainImage.pathOrUrl.startsWith('http')) {
+                                        imageUrl = mainImage.pathOrUrl;
+                                    } else {
+                                        // Ensure slash between domain and path
+                                        const path = mainImage.pathOrUrl.startsWith('/') ? mainImage.pathOrUrl : `/${mainImage.pathOrUrl}`;
+                                        
+                                        // If it's in uploads, it's on the backend (port 3001)
+                                        if (path.startsWith('/uploads')) {
+                                            imageUrl = `http://localhost:3001${path}`;
+                                        } else {
+                                            // Otherwise it's likely in public/images, served by frontend (port 3000)
+                                            imageUrl = path;
+                                        }
+                                    }
+                                }
+
                                 return (
-                                    <TableRow key={car.id} className="hover:bg-neutral-50/80 transition-colors group">
-                                        <TableCell className="pl-4 py-3">
-                                            {/* Explicit style to prevent giant images if tailwind fails */}
-                                            <div style={{ width: '80px', height: '56px' }} className="rounded bg-neutral-100 overflow-hidden border border-neutral-200 shrink-0">
-                                                {mainImage ? (
-                                                    <img src={mainImage} alt={car.title} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-neutral-400">
-                                                        <CarSymbol className="w-5 h-5 opacity-20" />
-                                                    </div>
-                                                )}
+                                    <tr key={car.id}>
+                                        <td className="admin-table-image-cell">
+                                            {mainImage ? (
+                                                <img 
+                                                    src={imageUrl} 
+                                                    alt={car.title} 
+                                                    className="admin-table-image"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = 'https://placehold.co/80x60?text=No+Image';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="admin-table-image admin-no-image">
+                                                    No Img
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="admin-table-title">{car.title}</div>
+                                            <div className="admin-table-subtitle">{car.year}</div>
+                                        </td>
+                                        <td>
+                                            <span className={`admin-status-badge ${car.status === 'active' ? 'status-active' : 'status-sold'}`}>
+                                                {car.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="admin-price">
+                                                ${car.priceUsd.toLocaleString().replace(/,/g, ' ')}
                                             </div>
-                                        </TableCell>
-                                        <TableCell className="py-3">
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-[15px] text-[#141414]">{car.title}</span>
-                                                <span className="text-xs text-neutral-500">{car.year}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-3">
-                                            <Badge
-                                                variant="secondary"
-                                                className={`
-                                                    rounded-md px-2 py-0.5 text-xs font-medium border
-                                                    ${car.status === 'active'
-                                                        ? 'bg-green-50 text-green-700 border-green-200'
-                                                        : 'bg-neutral-50 text-neutral-600 border-neutral-200'
-                                                    }
-                                                `}
-                                            >
-                                                {car.status === 'active' ? 'Active' : 'Draft'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right font-medium text-sm py-3">
-                                            ${car.priceUsd.toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="pr-4 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Link to={`/admin/cars/${car.id}`}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-500 hover:text-blue-600 hover:bg-blue-50">
-                                                        <Pencil className="w-4 h-4" />
-                                                        <span className="sr-only">Edit</span>
-                                                    </Button>
+                                        </td>
+                                        <td className="admin-actions-cell">
+                                            <div className="admin-actions-wrapper">
+                                                <Link 
+                                                    to={`/admin/cars/${car.id}`} 
+                                                    className="admin-action-icon-btn"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
                                                 </Link>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(car.id)}
-                                                    className="h-8 w-8 text-neutral-500 hover:text-red-600 hover:bg-red-50"
+                                                <button 
+                                                    onClick={() => handleDelete(car.id)} 
+                                                    className="admin-action-icon-btn delete"
+                                                    title="Delete"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
-                                                    <span className="sr-only">Delete</span>
-                                                </Button>
+                                                </button>
                                             </div>
-                                        </TableCell>
-                                    </TableRow>
+                                        </td>
+                                    </tr>
                                 );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

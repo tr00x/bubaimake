@@ -5,6 +5,10 @@ import path from 'path';
 import multer from 'multer';
 import { PrismaClient } from '@prisma/client';
 import cookieParser from 'cookie-parser';
+import axios from 'axios';
+import 'dotenv/config';
+import { Telegraf } from 'telegraf';
+import fs from 'fs';
 
 const app = express();
 const prisma = new PrismaClient({
@@ -54,11 +58,111 @@ const requireAuth = (req: express.Request, res: express.Response, next: express.
 
 // --- API Routes ---
 
+app.post('/api/contact', async (req, res) => {
+    const { name, contact, message, carTitle, carId, link, carPrice, source, carImage } = req.body;
+    
+    // Validate required fields
+    if (!name || !contact) {
+        return res.status(400).json({ error: 'Name and contact are required' });
+    }
+
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatIds = process.env.TELEGRAM_CHAT_ID?.split(',').map(id => id.trim()).filter(Boolean);
+
+    if (!token || !chatIds || chatIds.length === 0) {
+        console.error('Telegram credentials not set');
+        return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const isManagerRequest = source === 'Кнопка менеджера (модальное окно)';
+
+    const title = isManagerRequest 
+        ? '👨‍💼 *Вопрос Менеджеру!*' 
+        : '📩 *Новая заявка с сайта!*';
+
+    const text = `
+${title}
+
+👤 *Имя:* ${name}
+📞 *Контакты:* ${contact}
+${carTitle ? `🚗 *Автомобиль:* ${carTitle}` : ''}
+${carPrice ? `💰 *Цена:* ${carPrice}` : ''}
+${(link && isManagerRequest) ? `🔗 [Ссылка на страницу](${link})` : ''}
+
+💬 *Сообщение:*
+${message || 'Без сообщения'}
+    `.trim();
+
+    try {
+        const bot = new Telegraf(token);
+        
+        // Resolve photo source once
+        let photoSource: string | { source: string } | undefined;
+        if (carImage && isManagerRequest) {
+             console.log('Processing carImage:', carImage);
+
+             if (carImage.startsWith('/uploads/')) {
+                 // uploads folder is in root
+                 const localPath = path.join(__dirname, '..', carImage);
+                 if (fs.existsSync(localPath)) {
+                     photoSource = { source: localPath };
+                 } else {
+                     console.log('Uploads file not found:', localPath);
+                 }
+             } else if (carImage.startsWith('/images/')) {
+                 // Public assets folder
+                 const localPath = path.join(__dirname, '..', 'public', carImage);
+                 console.log('Trying public path:', localPath);
+                 if (fs.existsSync(localPath)) {
+                     photoSource = { source: localPath };
+                 } else {
+                     console.log('Public file not found:', localPath);
+                 }
+             } else if (carImage.startsWith('http')) {
+                 photoSource = carImage;
+             } else {
+                 // Try relative path or filename in uploads
+                 const uploadPath = path.join(__dirname, '..', 'uploads', carImage);
+                 if (fs.existsSync(uploadPath)) {
+                     photoSource = { source: uploadPath };
+                 }
+             }
+        }
+
+        // Send to all chat IDs
+        const sendPromises = chatIds.map(async (chatId) => {
+            let sent = false;
+            if (photoSource) {
+                try {
+                    await bot.telegram.sendPhoto(chatId, photoSource, { caption: text, parse_mode: 'Markdown' });
+                    sent = true;
+                } catch (err) {
+                    console.error(`Error sending photo to ${chatId}:`, err);
+                }
+            }
+            
+            if (!sent) {
+                 await bot.telegram.sendMessage(chatId, text, { parse_mode: 'Markdown' });
+            }
+        });
+
+        await Promise.all(sendPromises);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Telegram send error:', error);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
+
 // Auth
 app.post('/api/auth/login', (req, res) => {
-    const { password } = req.body;
+    const { username, password } = req.body;
 
-    if (password === process.env.ADMIN_PASSWORD) {
+    const validUsername = process.env.ADMIN_USERNAME || 'admin';
+    const validPassword = process.env.ADMIN_PASSWORD;
+
+    if (username === validUsername && password === validPassword) {
         const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
         // Store in memory or DB? For single user MVP, verify against env or generated token if we persist it.
         // Better: just verify password and set a simpler "authorized" cookie if specific token management isn't needed. 
@@ -97,6 +201,70 @@ app.get('/api/auth/me', (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
     res.clearCookie('admin_token');
     res.json({ success: true });
+});
+
+// Env Management
+app.get('/api/admin/env', requireAuth, (req, res) => {
+    try {
+        const envPath = path.join(__dirname, '..', '.env');
+        if (!fs.existsSync(envPath)) {
+             return res.json({});
+        }
+        const envContent = fs.readFileSync(envPath, 'utf-8');
+        const envVars: Record<string, string> = {};
+        
+        envContent.split('\n').forEach(line => {
+            const match = line.match(/^([^=]+)=(.*)$/);
+            if (match) {
+                const key = match[1].trim();
+                const value = match[2].trim();
+                if (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'].includes(key)) {
+                    envVars[key] = value;
+                }
+            }
+        });
+        
+        res.json(envVars);
+    } catch (error) {
+        console.error('Error reading .env:', error);
+        res.status(500).json({ error: 'Failed to read settings' });
+    }
+});
+
+app.post('/api/admin/env', requireAuth, (req, res) => {
+    try {
+        const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD } = req.body;
+        const envPath = path.join(__dirname, '..', '.env');
+        
+        let envContent = '';
+        if (fs.existsSync(envPath)) {
+            envContent = fs.readFileSync(envPath, 'utf-8');
+        }
+
+        const newVars = { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD };
+        let newContent = envContent;
+
+        Object.entries(newVars).forEach(([key, value]) => {
+            if (value === undefined) return;
+            
+            // Update process.env
+            process.env[key] = value as string;
+
+            const regex = new RegExp(`^${key}=.*`, 'm');
+            if (regex.test(newContent)) {
+                newContent = newContent.replace(regex, `${key}=${value}`);
+            } else {
+                newContent += `\n${key}=${value}`;
+            }
+        });
+
+        fs.writeFileSync(envPath, newContent.trim() + '\n');
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error writing .env:', error);
+        res.status(500).json({ error: 'Failed to save settings' });
+    }
 });
 
 // Cars

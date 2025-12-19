@@ -1,69 +1,80 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Label } from "../components/ui/label";
-import { Lock } from "lucide-react";
+import { toast } from "sonner";
+import { Toaster } from "../components/ui/sonner";
+import logo from "../assets/58ef5ee199d9ca1c60c8ac56288fb7dd033bd242.png";
+import "./admin.css"; // Import custom CSS
 
 export default function AdminLogin() {
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError("");
         try {
-            await client.post("/auth/login", { password });
+            await client.post("/auth/login", { username, password });
+            toast.success("Вход выполнен успешно");
             navigate("/admin/cars");
         } catch (err) {
-            setError("Invalid password");
+            toast.error("Неверные учетные данные");
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-            <Card className="w-full max-w-md shadow-lg">
-                <CardHeader className="space-y-1">
-                    <div className="flex justify-center mb-4">
-                        <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center">
-                            <Lock className="h-6 w-6 text-white" />
-                        </div>
+        <div className="admin-login-container">
+            <Toaster />
+            <div className="admin-login-card">
+                <div className="admin-login-header">
+                    <div className="admin-login-logo-container">
+                        <img src={logo} alt="Logo" className="admin-login-logo" />
                     </div>
-                    <CardTitle className="text-2xl text-center font-bold">Admin Portal</CardTitle>
-                    <CardDescription className="text-center">
-                        Enter your secure password to access the dashboard
-                    </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleLogin}>
-                    <CardContent className="grid gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={isLoading}
-                            />
-                        </div>
-                        {error && <p className="text-sm text-destructive text-red-500 font-medium text-center">{error}</p>}
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full bg-black hover:bg-neutral-800" type="submit" disabled={isLoading}>
-                            {isLoading ? "Authenticating..." : "Sign In"}
-                        </Button>
-                    </CardFooter>
+                    <h1 className="admin-login-title">Панель администратора</h1>
+                    <p className="admin-login-subtitle">Войдите для управления контентом</p>
+                </div>
+
+                <form onSubmit={handleLogin} className="admin-login-form">
+                    <div className="admin-input-group">
+                        <label className="admin-label">Имя пользователя</label>
+                        <input 
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            disabled={isLoading}
+                            placeholder="admin"
+                            className="admin-input"
+                        />
+                    </div>
+                    <div className="admin-input-group">
+                        <label className="admin-label">Пароль</label>
+                        <input 
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={isLoading}
+                            placeholder="••••••••"
+                            className="admin-input"
+                        />
+                    </div>
+                    <button 
+                        type="submit" 
+                        disabled={isLoading}
+                        className="admin-button"
+                    >
+                        {isLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <div className="spinner" />
+                                <span>Вход...</span>
+                            </div>
+                        ) : "Войти"}
+                    </button>
                 </form>
-            </Card>
+            </div>
         </div>
     );
 }

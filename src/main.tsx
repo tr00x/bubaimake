@@ -1,16 +1,17 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import App from "./App.tsx";
-import Home from "./pages/Home.tsx";
-import CatalogPage from "./pages/Catalog.tsx";
-import FeaturesPage from "./pages/Features.tsx";
-import BlogPage from "./pages/Blog.tsx";
-import CarPage from "./pages/Car.tsx";
-import AdminLayout from "./admin/AdminLayout.tsx";
-import AdminLogin from "./admin/AdminLogin.tsx";
-import AdminCarList from "./admin/AdminCarList.tsx";
-import CarEditor from "./admin/CarEditor.tsx";
-import "./index.css";
+import App from "./App";
+import Home from "./pages/Home";
+import CatalogPage from "./pages/Catalog";
+import FeaturesPage from "./pages/Features";
+import BlogPage from "./pages/Blog";
+import CarPage from "./pages/Car";
+import AdminLayout from "./admin/AdminLayout";
+import AdminLogin from "./admin/AdminLogin";
+import AdminCarList from "./admin/AdminCarList";
+import CarEditor from "./admin/CarEditor";
+import AdminSettings from "./admin/AdminSettings";
+import "./styles/globals.css";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
@@ -30,6 +31,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="cars" element={<AdminCarList />} />
         <Route path="cars/new" element={<CarEditor />} />
         <Route path="cars/:id" element={<CarEditor />} />
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
     </Routes>
   </BrowserRouter>

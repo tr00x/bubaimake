@@ -1,108 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import svgPaths from "../imports/svg-5qr6y18hqk";
+import { motion } from "framer-motion";
 import imgBmwM5Competition from "../assets/5ff7312c3dc0a1014ede77a74beefcf8924374ee.png";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import client from "../api/client";
-
-// Icons
-const FilterIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M14 2.66667H9.33333" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6.66667 2.66667H2" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M14 8H8" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M5.33333 8H2" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M14 13.3333H10.6667" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8 13.3333H2" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9.33333 1.33333V4" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M5.33333 6.66667V9.33333" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10.6667 12V14.6667" stroke="currentColor" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const HorsePowerIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M8 9.33333L10.6667 6.66667" stroke="#737373" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d={svgPaths.p1a6e4100} stroke="#737373" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const SpeedIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M6.66667 1.33333H9.33333" stroke="#737373" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8 9.33333L10 7.33333" stroke="#737373" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-    <path d={svgPaths.p1a6375c0} stroke="#737373" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export type CarCardProps = {
-  title: string;
-  image: string;
-  tags?: string[];
-  meta?: string[];
-  specs: { hp: string; zeroTo100: string };
-  price: string;
-  id: string; // Changed from slug to id for simplicity, or we map it
-};
-
-export function CarCard({ title, image, tags = [], meta = [], specs, price, id }: CarCardProps) {
-  return (
-    <Link to={`/catalog/${id}`} className="bg-white rounded-[16px] border border-[#e6e6e6] overflow-hidden flex flex-col group cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
-        <img
-          src={image}
-          alt={title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        <div className="absolute top-[12px] left-[12px] flex flex-wrap gap-[8px]">
-          {tags.map((t) => (
-            <div key={t} className={`bg-white/90 px-[10px] py-[4px] rounded-[4px] border backdrop-blur-sm shadow-sm flex items-center justify-center ${t === "Горячее" ? "border-red-500" : "border-neutral-200"}`}>
-              <span className={`text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "text-red-600" : "text-[#141414]"}`}>{t}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="p-[20px] flex flex-col gap-[16px] flex-1">
-        <div className="flex flex-col gap-[8px]">
-          <h3 className="text-[#141414] text-[20px] font-semibold tracking-tight">{title}</h3>
-          <div className="flex flex-wrap gap-[8px]">
-            {meta.map((text) => (
-              <span key={text} className="text-[13px] text-neutral-500 bg-neutral-100 px-[8px] py-[4px] rounded-[4px]">
-                {text}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-[12px] py-[12px] border-t border-b border-dashed border-neutral-200">
-          <div className="flex flex-col gap-[2px]">
-            <div className="flex items-center gap-[4px]">
-              <HorsePowerIcon />
-              <span className="text-[12px] text-neutral-400">Мощность</span>
-            </div>
-            <span className="text-[14px] font-medium text-[#141414]">{specs.hp}</span>
-          </div>
-          <div className="flex flex-col gap-[2px]">
-            <div className="flex items-center gap-[4px]">
-              <SpeedIcon />
-              <span className="text-[12px] text-neutral-400">Разгон 0-100</span>
-            </div>
-            <span className="text-[14px] font-medium text-[#141414]">{specs.zeroTo100}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mt-auto pt-[4px]">
-          <span className="text-[#141414] text-[20px] font-bold tracking-tight">{price}</span>
-          <span className="w-[36px] h-[36px] rounded-full bg-[#141414] flex items-center justify-center text-white group-hover:bg-red-600 transition-colors">
-            <ArrowRight className="w-4 h-4" />
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
+import { CarCard } from "./CarCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Pagination,
@@ -115,8 +16,21 @@ type CatalogSectionProps = {
   mode?: 'preview' | 'full';
 };
 
+interface Car {
+  id: string;
+  title: string;
+  images?: { isMain: boolean; pathOrUrl: string }[];
+  tags?: string;
+  year: number;
+  fuelType: string;
+  transmission: string;
+  horsepower?: number;
+  topSpeed?: number;
+  priceUsd: number;
+}
+
 export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps) {
-  const [cars, setCars] = useState<any[]>([]);
+  const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams] = useSearchParams();
@@ -154,66 +68,119 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
     <section className="max-w-[1400px] mx-auto px-4 md:px-[40px] py-[60px] md:py-[100px] flex flex-col gap-[40px]">
       {/* Header */}
       <div className="flex flex-row items-end justify-between gap-6 flex-wrap">
-        <div className="flex flex-col gap-[12px]">
-          <span className="uppercase tracking-widest text-neutral-400 text-[12px] font-semibold">Наш шоурум</span>
-          <h2 className="text-[32px] md:text-[40px] font-medium text-[#141414] leading-tight">Каталог автомобилей</h2>
+        <div className="flex flex-col gap-3">
+          <motion.span 
+            className="uppercase tracking-widest text-muted-foreground text-xs font-semibold"
+            initial={{ opacity: 0, x: -20 }}
+            animate={mode === 'full' ? { opacity: 1, x: 0 } : undefined}
+            whileInView={mode === 'preview' ? { opacity: 1, x: 0 } : undefined}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            Наш шоурум
+          </motion.span>
+          <motion.h2 
+            className="text-3xl md:text-4xl font-medium text-foreground leading-tight"
+            initial={{ opacity: 0, x: -20 }}
+            animate={mode === 'full' ? { opacity: 1, x: 0 } : undefined}
+            whileInView={mode === 'preview' ? { opacity: 1, x: 0 } : undefined}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            Каталог автомобилей
+          </motion.h2>
         </div>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[24px]">
+      <motion.div 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        initial="hidden"
+        animate={mode === 'full' ? "visible" : undefined}
+        whileInView={mode === 'preview' ? "visible" : undefined}
+        viewport={{ once: true, margin: "-100px" }}
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+          }
+        }}
+      >
         {loading ? (
-          <div className="col-span-full text-center py-10 text-neutral-400">Загрузка...</div>
+          <div className="col-span-full text-center py-10 text-muted-foreground">Загрузка...</div>
         ) : displayCars.length === 0 ? (
-          <div className="col-span-full text-center py-10 text-neutral-400">
+          <div className="col-span-full text-center py-10 text-muted-foreground">
             {searchQuery ? `По запросу "${searchQuery}" ничего не найдено` : "Нет автомобилей в наличии"}
           </div>
         ) : (
           displayCars.map((car) => {
-            const mainImage = car.images?.find((i: any) => i.isMain)?.pathOrUrl || car.images?.[0]?.pathOrUrl || imgBmwM5Competition;
+            const mainImage = car.images?.find((i) => i.isMain)?.pathOrUrl || car.images?.[0]?.pathOrUrl || imgBmwM5Competition;
 
             // Transform DB data to UI props
             return (
-              <CarCard
+              <motion.div
                 key={car.id}
-                title={car.title}
-                image={mainImage}
-                tags={car.tags ? car.tags.split(',') : []}
-                meta={[
-                  car.year.toString(),
-                  car.fuelType,
-                  car.transmission
-                ]}
-                specs={{
-                  hp: car.horsepower ? `${car.horsepower} л.с.` : '—',
-                  zeroTo100: car.topSpeed ? '3.3 сек' : '—' // topSpeed/0-100 logic needing revisit if not in DB, assume demo
+                variants={{
+                  hidden: { opacity: 0, y: 30 },
+                  visible: { 
+                    opacity: 1, 
+                    y: 0,
+                    transition: { duration: 0.5, ease: "easeOut" }
+                  }
                 }}
-                price={`$${car.priceUsd.toLocaleString()}`}
-                id={car.id}
-              />
+              >
+                <CarCard
+                  title={car.title}
+                  image={mainImage}
+                  tags={car.tags ? car.tags.split(',') : []}
+                  meta={[
+                    car.year.toString(),
+                    car.fuelType,
+                    car.transmission
+                  ]}
+                  specs={{
+                    hp: `${car.horsepower || 0} л.с.`,
+                    zeroTo100: `${car.topSpeed || 0} сек`
+                  }}
+                  price={`$${car.priceUsd.toLocaleString()}`}
+                  id={car.id}
+                />
+              </motion.div>
             );
           })
         )}
-      </div>
+      </motion.div>
 
       {mode === 'preview' ? (
-        <div className="flex justify-center mt-12">
+        <motion.div 
+          className="flex justify-center mt-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           <Link 
             to="/catalog" 
-            className="bg-[#141414] text-white px-[24px] py-[16px] md:py-[20px] rounded-[12px] text-[15px] md:text-[16px] font-medium hover:bg-neutral-800 active:scale-[0.98] transition-all text-center shadow-lg shadow-black/10"
+            className="bg-primary text-primary-foreground px-6 py-4 md:py-5 rounded-xl text-base font-medium hover:bg-primary/90 active:scale-[0.98] transition-all text-center"
           >
             <span>Перейти в каталог</span>
           </Link>
-        </div>
+        </motion.div>
       ) : (
         totalPages > 1 && (
-          <Pagination className="mt-12">
-            <PaginationContent className="gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Pagination className="mt-12">
+              <PaginationContent className="gap-2">
               <PaginationItem>
                 <PaginationLink 
                   href="#" 
-                  onClick={(e: any) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
-                  className={`w-9 h-9 p-0 rounded-full flex items-center justify-center transition-all border-none ring-0 outline-none shadow-none bg-transparent ${currentPage === 1 ? "pointer-events-none opacity-30" : "cursor-pointer hover:bg-neutral-100"}`}
+                  onClick={(e: React.MouseEvent) => { e.preventDefault(); handlePageChange(currentPage - 1); }}
+                  className={`w-9 h-9 p-0 rounded-full flex items-center justify-center transition-all border-none ring-0 outline-none shadow-none bg-transparent ${currentPage === 1 ? "pointer-events-none opacity-30" : "cursor-pointer hover:bg-secondary"}`}
                   size="icon"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -225,28 +192,13 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
                   <PaginationLink
                     href="#"
                     isActive={false}
-                    onClick={(e: any) => { e.preventDefault(); handlePageChange(page); }}
-                    className={`!w-9 !h-9 !min-w-9 !p-0 !rounded-full flex items-center justify-center text-[14px] font-medium transition-all border-none ring-0 outline-none shadow-none ${
+                    onClick={(e: React.MouseEvent) => { e.preventDefault(); handlePageChange(page); }}
+                    className={`w-9 h-9 p-0 rounded-full flex items-center justify-center text-sm font-medium transition-all border-none ring-0 outline-none shadow-none ${
                       page === currentPage 
-                        ? "shadow-md scale-110 font-bold" 
-                        : "bg-transparent text-[#141414] hover:bg-neutral-100"
+                        ? "bg-primary text-primary-foreground scale-110 font-bold" 
+                        : "bg-transparent text-foreground hover:bg-secondary"
                     }`}
                     size="icon"
-                    style={
-                      page === currentPage 
-                        ? { 
-                            width: '36px', 
-                            height: '36px', 
-                            borderRadius: '50%',
-                            backgroundColor: '#141414',
-                            color: '#ffffff'
-                          }
-                        : { 
-                            width: '36px', 
-                            height: '36px', 
-                            borderRadius: '50%' 
-                          }
-                    }
                   >
                     {page}
                   </PaginationLink>
@@ -256,8 +208,8 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
               <PaginationItem>
                 <PaginationLink 
                   href="#" 
-                  onClick={(e: any) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
-                  className={`w-9 h-9 p-0 rounded-full flex items-center justify-center transition-all border-none ring-0 outline-none shadow-none bg-transparent ${currentPage === totalPages ? "pointer-events-none opacity-30" : "cursor-pointer hover:bg-neutral-100"}`}
+                  onClick={(e: React.MouseEvent) => { e.preventDefault(); handlePageChange(currentPage + 1); }}
+                  className={`w-9 h-9 p-0 rounded-full flex items-center justify-center transition-all border-none ring-0 outline-none shadow-none bg-transparent ${currentPage === totalPages ? "pointer-events-none opacity-30" : "cursor-pointer hover:bg-secondary"}`}
                   size="icon"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -265,6 +217,7 @@ export default function CatalogSection({ mode = 'preview' }: CatalogSectionProps
               </PaginationItem>
             </PaginationContent>
           </Pagination>
+          </motion.div>
         )
       )}
     </section>

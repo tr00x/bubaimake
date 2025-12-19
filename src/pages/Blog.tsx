@@ -9,22 +9,22 @@ export default function BlogPage() {
   ];
 
   return (
-    <section className="max-w-[1400px] mx-auto px-4 md:px-[40px] pt-[40px] md:pt-[60px] flex flex-col gap-[24px]">
-      <div className="flex flex-col gap-[12px]">
-        <span className="uppercase tracking-widest text-neutral-400 text-[12px] font-semibold">Новости и статьи</span>
-        <h1 className="text-[32px] md:text-[40px] font-medium text-[#141414] leading-tight">Блог</h1>
+    <section className="max-w-[1400px] mx-auto px-4 md:px-10 pt-10 md:pt-16 flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">Новости и статьи</span>
+        <h1 className="text-3xl md:text-4xl font-medium text-foreground leading-tight">Блог</h1>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[24px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {posts.map((post) => (
-          <article key={post.id} className="bg-white rounded-[16px] border border-[#e6e6e6] overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <div className="relative aspect-[4/3] w-full bg-neutral-100" />
-            <div className="p-[20px] flex flex-col gap-[12px] flex-1">
-              <span className="text-neutral-400 text-[13px]">{post.date}</span>
-              <h3 className="text-[#141414] text-[18px] font-semibold tracking-tight">{post.title}</h3>
+          <article key={post.id} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col hover:-translate-y-1 transition-all duration-300">
+            <div className="relative aspect-[4/3] w-full bg-secondary" />
+            <div className="p-5 flex flex-col gap-3 flex-1">
+              <span className="text-muted-foreground text-xs font-medium">{post.date}</span>
+              <h3 className="text-foreground text-lg font-semibold tracking-tight leading-snug">{post.title}</h3>
               <div className="mt-auto flex justify-between items-center">
-                <a href="#" className="text-[14px] text-red-600 hover:text-red-700 font-medium">Читать</a>
-                <span className="inline-flex w-[36px] h-[36px] items-center justify-center rounded-full bg-[#141414] text-white">
+                <a href="#" className="text-sm text-destructive hover:text-destructive/80 font-medium transition-colors">Читать</a>
+                <span className="inline-flex w-9 h-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <ArrowRight className="w-4 h-4" />
                 </span>
               </div>

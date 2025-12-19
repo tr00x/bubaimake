@@ -1,52 +1,78 @@
 import React from "react";
-import svgPaths from "../imports/svg-5qr6y18hqk";
 import { CheckCircle2, FileText, Clock, Globe } from "lucide-react";
+import { motion } from "framer-motion";
 
-function FeatureCard({ icon, title, description }) {
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <div className="bg-neutral-50 rounded-[16px] p-[24px] md:p-[28px] flex flex-col gap-[16px] border border-[#e6e6e6] hover:border-neutral-300 transition-colors flex-1 min-w-[280px] group">
-       <div className="w-[56px] h-[56px] rounded-[12px] bg-white flex items-center justify-center border border-[#e6e6e6] shadow-sm text-[#141414]">
+    <motion.div 
+      className="bg-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-border hover:border-ring/50 transition-colors flex-1 min-w-[280px] group"
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+      }}
+    >
+       <div className="w-14 h-14 rounded-xl bg-background flex items-center justify-center border border-border text-foreground">
           {icon}
        </div>
-       <h3 className="text-[18px] md:text-[20px] font-medium text-[#141414] leading-[1.3]">{title}</h3>
-       <div className="text-[14px] md:text-[15px] text-neutral-500 leading-[1.5]">
+       <h3 className="text-lg md:text-xl font-medium text-card-foreground leading-tight">{title}</h3>
+       <div className="text-sm md:text-base text-muted-foreground leading-relaxed">
           {description}
        </div>
-    </div>
+    </motion.div>
   );
 }
 
 export default function FeaturesSection() {
   return (
-    <section className="bg-neutral-50 border-y border-neutral-100">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-[40px] py-[80px] flex flex-col gap-[50px] items-center">
-          <div className="flex flex-col gap-[16px] items-center text-center max-w-[600px]">
-             <span className="uppercase tracking-widest text-neutral-400 text-[12px] font-semibold">Почему мы</span>
-             <h2 className="text-[32px] font-medium text-[#141414]">Преимущества работы с нами</h2>
-          </div>
+    <section className="bg-secondary/20 border-y border-border">
+        <div className="container mx-auto px-4 md:px-10 py-20 flex flex-col gap-12 items-center">
+          <motion.div 
+            className="flex flex-col gap-4 items-center text-center max-w-xl"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+             <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">Почему мы</span>
+             <h2 className="text-3xl font-medium text-foreground">Преимущества работы с нами</h2>
+          </motion.div>
           
-          <div className="flex flex-col md:flex-row flex-wrap gap-[24px] w-full justify-center">
+          <motion.div 
+            className="flex flex-col md:flex-row flex-wrap gap-6 w-full justify-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={{
+              visible: { transition: { staggerChildren: 0.1 } }
+            }}
+          >
              <FeatureCard 
-               icon={<CheckCircle2 className="w-10 h-10 text-[#141414]" />}
+               icon={<CheckCircle2 className="w-10 h-10 text-primary" />}
                title="Сопровождение 24/7"
                description="Личный менеджер на связи на каждом этапе сделки"
              />
              <FeatureCard 
-               icon={<FileText className="w-10 h-10 text-[#141414]" />}
+               icon={<FileText className="w-10 h-10 text-primary" />}
                title="Полный пакет документов"
                description="Оформление инвойсов, таможенных деклараций и сертификатов"
              />
              <FeatureCard 
-               icon={<Clock className="w-10 h-10 text-[#141414]" />}
+               icon={<Clock className="w-10 h-10 text-primary" />}
                title="Соблюдение сроков"
                description="Четкие SLA и план работ, зафиксированные в договоре"
              />
              <FeatureCard 
-               icon={<Globe className="w-10 h-10 text-[#141414]" />}
+               icon={<Globe className="w-10 h-10 text-primary" />}
                title="Глобальная логистика"
                description="Отлаженные маршруты доставки авто, авиа и морским транспортом"
              />
-          </div>
+          </motion.div>
         </div>
     </section>
   );
