@@ -72,6 +72,7 @@
       "access_title": "Admin Access",
       "access_subtitle": "Manage your admin login credentials.",
       "username": "Username",
+      "username_placeholder": "admin",
       "password": "Password",
       "password_placeholder": "Enter new password",
       "telegram_title": "Telegram Bot",

@@ -72,6 +72,7 @@
       "access_title": "Доступ администратора",
       "access_subtitle": "Управление учетными данными для входа.",
       "username": "Имя пользователя",
+      "username_placeholder": "admin",
       "password": "Пароль",
       "password_placeholder": "Введите новый пароль",
       "telegram_title": "Telegram Бот",

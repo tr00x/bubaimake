@@ -135,7 +135,7 @@ export default function AdminSettings() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                placeholder={t('admin.settings.username_placeholder')}
                 className="admin-input"
               />
             </div>
