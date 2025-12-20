@@ -16,13 +16,21 @@ export default function App() {
 
   useEffect(() => {
     if (isLoading) {
-      // Fake loading time to smooth out initial render and hide layout shifts
-      const timer = setTimeout(() => {
+      const minTimePromise = new Promise(resolve => setTimeout(resolve, 2000)); // Minimum 2s display
+      
+      const loadPromise = new Promise(resolve => {
+        if (document.readyState === 'complete') {
+          resolve(true);
+        } else {
+          window.addEventListener('load', () => resolve(true));
+        }
+      });
+
+      // Wait for both minimum time and window load
+      Promise.all([minTimePromise, loadPromise]).then(() => {
         setIsLoading(false);
         sessionStorage.setItem('hasSeenPreloader', 'true');
-      }, 1000); 
-
-      return () => clearTimeout(timer);
+      });
     }
   }, [isLoading]);
 
