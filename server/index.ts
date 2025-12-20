@@ -25,8 +25,12 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve static uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static uploads with caching (1 year)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    maxAge: '1y',
+    etag: true,
+    immutable: true
+}));
 
 // Image Upload Configuration
 const storage = multer.diskStorage({

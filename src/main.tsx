@@ -12,8 +12,20 @@ import AdminCarList from "./admin/AdminCarList";
 import CarEditor from "./admin/CarEditor";
 import AdminSettings from "./admin/AdminSettings";
 import TranslationEditor from "./admin/TranslationEditor";
+import { registerSW } from 'virtual:pwa-register';
 import "./i18n";
 import "./styles/globals.css";
+
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm('Доступно новое обновление. Обновить?')) {
+      updateSW(true);
+    }
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline');
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>

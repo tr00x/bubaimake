@@ -60,7 +60,8 @@
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
             "telegraf": "^4.16.3",
-            "vaul": "^1.1.2"
+            "vaul": "^1.1.2",
+            "vite-plugin-pwa": "^1.2.0"
       },
       "devDependencies": {
             "@tailwindcss/vite": "^4.1.18",
