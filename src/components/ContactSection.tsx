@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Phone, Mail, MapPin, Clock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import client from "../api/client";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ function ContactItem({ icon, label, children }: ContactItemProps) {
 }
 
 export default function ContactSection() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -47,14 +49,14 @@ export default function ContactSection() {
         contact: contactInfo,
         message: formData.message,
         link: window.location.href,
-        source: 'Контактная форма',
+        source: 'Contact Form',
       });
 
-      toast.success("Сообщение отправлено! Мы свяжемся с вами в ближайшее время.");
+      toast.success(t('contact.form.success'));
       setFormData({ name: "", phone: "", email: "", message: "" });
     } catch (error) {
       console.error(error);
-      toast.error("Ошибка при отправке сообщения. Пожалуйста, попробуйте позже.");
+      toast.error(t('contact.form.error'));
     } finally {
       setLoading(false);
     }
@@ -68,38 +70,38 @@ export default function ContactSection() {
         initial={{ opacity: 0, x: -50 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
       >
           <div className="flex flex-col gap-3">
-              <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">Связь</span>
-              <h2 className="text-3xl md:text-4xl font-medium text-foreground leading-tight">Наши контакты</h2>
+              <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">{t('contact.label')}</span>
+              <h2 className="text-3xl md:text-4xl font-medium text-foreground leading-tight">{t('contact.title')}</h2>
               <p className="text-muted-foreground text-base leading-relaxed">
-                  Мы всегда на связи и готовы ответить на любые ваши вопросы. Выберите удобный способ связи.
+                  {t('contact.subtitle')}
               </p>
           </div>
           
           <div className="flex flex-col gap-8">
-             <ContactItem icon={<Phone className="w-5 h-5" />} label="Телефоны">
+             <ContactItem icon={<Phone className="w-5 h-5" />} label={t('contact.phone_label')}>
                  <div className="flex flex-col gap-1">
                     <a href="tel:+971544050707" className="hover:text-primary transition-colors">+971 54 405 0707</a>
                     <a href="tel:+971544050303" className="hover:text-primary transition-colors">+971 54 405 0303</a>
-                    <span className="text-muted-foreground">Офис: +971 4 331 8397</span>
+                    <span className="text-muted-foreground">{t('contact.office_phone')}</span>
                  </div>
              </ContactItem>
 
-             <ContactItem icon={<Mail className="w-5 h-5" />} label="Email">
+             <ContactItem icon={<Mail className="w-5 h-5" />} label={t('contact.email_label')}>
                  <a href="mailto:info@mashynbazar.com" className="hover:text-primary transition-colors">info@mashynbazar.com</a>
-                 <div className="text-muted-foreground text-sm">По вопросам сотрудничества</div>
+                 <div className="text-muted-foreground text-sm">{t('contact.cooperation')}</div>
              </ContactItem>
 
-             <ContactItem icon={<MapPin className="w-5 h-5" />} label="Офис">
-                 <p>Dubai, UAE</p>
-                 <p className="text-muted-foreground text-sm">Al Quoz Industrial Area 3</p>
+             <ContactItem icon={<MapPin className="w-5 h-5" />} label={t('contact.office_label')}>
+                 <p>{t('contact.office_city')}</p>
+                 <p className="text-muted-foreground text-sm">{t('contact.office_address')}</p>
              </ContactItem>
 
-             <ContactItem icon={<Clock className="w-5 h-5" />} label="Режим работы">
-                 <p>Пн-Сб: 9:00 - 19:00</p>
-                 <p className="text-muted-foreground text-sm">Вс: Выходной</p>
+             <ContactItem icon={<Clock className="w-5 h-5" />} label={t('contact.hours_label')}>
+                 <p>{t('header.working_hours')}</p>
+                 <p className="text-muted-foreground text-sm">{t('header.sunday_off')}</p>
              </ContactItem>
           </div>
       </motion.div>
@@ -114,31 +116,31 @@ export default function ContactSection() {
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-               <h3 className="text-2xl font-medium text-foreground">Оставить заявку</h3>
-               <p className="text-muted-foreground">Заполните форму, и наш менеджер свяжется с вами в течение 15 минут.</p>
+               <h3 className="text-2xl font-medium text-foreground">{t('contact.form.title')}</h3>
+               <p className="text-muted-foreground">{t('contact.form.subtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                <div className="flex flex-col gap-2">
-                  <label htmlFor="name" className="text-sm font-medium text-foreground">Ваше имя</label>
+                  <label htmlFor="name" className="text-sm font-medium text-foreground">{t('contact.form.name')}</label>
                   <input 
                     type="text" 
                     id="name"
                     required
                     className="h-12 px-4 rounded-xl bg-background border border-border focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-all"
-                    placeholder="Иван Иванов"
+                    placeholder="John Doe"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
                </div>
                <div className="flex flex-col gap-2">
-                  <label htmlFor="phone" className="text-sm font-medium text-foreground">Номер телефона</label>
+                  <label htmlFor="phone" className="text-sm font-medium text-foreground">{t('contact.form.phone')}</label>
                   <input 
                     type="tel" 
                     id="phone"
                     required
                     className="h-12 px-4 rounded-xl bg-background border border-border focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-all"
-                    placeholder="+7 (999) 000-00-00"
+                    placeholder="+971 50 000 0000"
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />
@@ -146,7 +148,7 @@ export default function ContactSection() {
             </div>
 
             <div className="flex flex-col gap-2">
-               <label htmlFor="email" className="text-sm font-medium text-foreground">Email (необязательно)</label>
+               <label htmlFor="email" className="text-sm font-medium text-foreground">{t('contact.form.email')}</label>
                <input 
                  type="email" 
                  id="email"
@@ -158,12 +160,12 @@ export default function ContactSection() {
             </div>
 
             <div className="flex flex-col gap-2">
-               <label htmlFor="message" className="text-sm font-medium text-foreground">Сообщение</label>
+               <label htmlFor="message" className="text-sm font-medium text-foreground">{t('contact.form.message')}</label>
                <textarea 
                  id="message"
                  rows={4}
                  className="p-4 rounded-xl bg-background border border-border focus:border-ring focus:ring-1 focus:ring-ring outline-none transition-all resize-none"
-                 placeholder="Интересует покупка BMW X5..."
+                 placeholder={t('contact.form.message')}
                  value={formData.message}
                  onChange={(e) => setFormData({...formData, message: e.target.value})}
                />
@@ -175,11 +177,11 @@ export default function ContactSection() {
               className="mt-2 h-12 bg-primary text-primary-foreground font-medium rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
             >
               {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-              {loading ? "Отправка..." : "Отправить заявку"}
+              {loading ? t('contact.form.sending') : t('contact.form.submit')}
             </button>
             
             <p className="text-xs text-muted-foreground text-center mt-2">
-              Нажимая кнопку, вы соглашаетесь с политикой обработки персональных данных
+              {t('contact.form.agreement')}
             </p>
         </form>
       </motion.div>

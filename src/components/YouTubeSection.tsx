@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, X, Play } from "lucide-react";
 import { Button } from "./ui/button";
 import { motion } from "framer-motion";
 import { LogoIcon } from "./ui/Icons";
+import { useTranslation } from "react-i18next";
 
 // YouTube Icon SVG
 function YouTubeIcon({ className = "" }: { className?: string }) {
@@ -26,6 +27,7 @@ interface VideoItem {
 }
 
 export default function YouTubeSection() {
+  const { t } = useTranslation();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -152,7 +154,7 @@ export default function YouTubeSection() {
                 ]
             }}
             transition={{
-                duration: 8,
+                duration: 6,
                 repeat: Infinity,
                 ease: "linear"
             }}
@@ -167,7 +169,7 @@ export default function YouTubeSection() {
                 scale: [1, 1.1, 1]
             }}
             transition={{
-                duration: 8,
+                duration: 6,
                 repeat: Infinity,
                 ease: "easeInOut"
             }}
@@ -180,7 +182,7 @@ export default function YouTubeSection() {
                 scale: [1, 1.2, 1]
             }}
             transition={{
-                duration: 10,
+                duration: 8,
                 repeat: Infinity,
                 ease: "easeInOut",
                 delay: 1
@@ -192,10 +194,10 @@ export default function YouTubeSection() {
                 
                 {/* Text */}
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-[1.1] tracking-tight">
-                    Обзоры, тест-драйвы и жизнь авторынка ОАЭ.
+                    {t('youtube.title')}
                 </h2>
                 <p className="text-gray-500 max-w-lg text-sm md:text-base leading-relaxed">
-                    Подписывайтесь, чтобы первыми узнавать о новинках, ценах и эксклюзивных предложениях.
+                    {t('youtube.subtitle')}
                 </p>
             </div>
             
@@ -225,7 +227,7 @@ export default function YouTubeSection() {
            </div>
            <div className="flex flex-col gap-0.5">
                <span className="text-sm md:text-base font-bold leading-none text-foreground">Mashyn Bazar</span>
-               <span className="text-[10px] md:text-xs text-muted-foreground font-medium">YouTube Channel</span>
+               <span className="text-[10px] md:text-xs text-muted-foreground font-medium">{t('youtube.channel_label')}</span>
            </div>
         </div>
 
@@ -236,7 +238,7 @@ export default function YouTubeSection() {
                 onClick={() => window.open('https://www.youtube.com/channel/UCoMu2BkIcQHKkUy9dr3gNdQ?sub_confirmation=1', '_blank')}
                 className="h-8 md:h-9 bg-[#CC0000] hover:bg-[#FF0000] text-white rounded-full px-4 md:px-5 text-xs md:text-sm font-bold uppercase tracking-wide shadow-none transition-all hover:scale-105 active:scale-95"
             >
-                Подписаться
+                {t('youtube.subscribe')}
             </Button>
 
             {/* Navigation Arrows */}

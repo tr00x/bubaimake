@@ -11,6 +11,8 @@ import AdminLogin from "./admin/AdminLogin";
 import AdminCarList from "./admin/AdminCarList";
 import CarEditor from "./admin/CarEditor";
 import AdminSettings from "./admin/AdminSettings";
+import TranslationEditor from "./admin/TranslationEditor";
+import "./i18n";
 import "./styles/globals.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -31,6 +33,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="cars" element={<AdminCarList />} />
         <Route path="cars/new" element={<CarEditor />} />
         <Route path="cars/:id" element={<CarEditor />} />
+        <Route path="translations" element={<TranslationEditor />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
     </Routes>

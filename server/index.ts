@@ -218,7 +218,7 @@ app.get('/api/admin/env', requireAuth, (req, res) => {
             if (match) {
                 const key = match[1].trim();
                 const value = match[2].trim();
-                if (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'].includes(key)) {
+                if (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'ADMIN_USERNAME', 'MANAGER_WHATSAPP', 'MANAGER_TELEGRAM'].includes(key)) {
                     envVars[key] = value;
                 }
             }
@@ -233,7 +233,7 @@ app.get('/api/admin/env', requireAuth, (req, res) => {
 
 app.post('/api/admin/env', requireAuth, (req, res) => {
     try {
-        const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD } = req.body;
+        const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD, MANAGER_WHATSAPP, MANAGER_TELEGRAM } = req.body;
         const envPath = path.join(__dirname, '..', '.env');
         
         let envContent = '';
@@ -241,7 +241,7 @@ app.post('/api/admin/env', requireAuth, (req, res) => {
             envContent = fs.readFileSync(envPath, 'utf-8');
         }
 
-        const newVars = { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD };
+        const newVars = { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ADMIN_USERNAME, ADMIN_PASSWORD, MANAGER_WHATSAPP, MANAGER_TELEGRAM };
         let newContent = envContent;
 
         Object.entries(newVars).forEach(([key, value]) => {
@@ -265,6 +265,14 @@ app.post('/api/admin/env', requireAuth, (req, res) => {
         console.error('Error writing .env:', error);
         res.status(500).json({ error: 'Failed to save settings' });
     }
+});
+
+// Public Config
+app.get('/api/contact-info', (req, res) => {
+    res.json({
+        whatsapp: process.env.MANAGER_WHATSAPP || '',
+        telegram: process.env.MANAGER_TELEGRAM || ''
+    });
 });
 
 // Cars
@@ -454,6 +462,43 @@ app.get('/api/youtube-videos', async (req, res) => {
     } catch (error) {
         console.error('YouTube fetch error:', error);
         res.status(500).json({ error: 'Failed to fetch videos' });
+    }
+});
+
+// Translations
+const localesPath = path.join(__dirname, '../src/locales');
+
+app.get('/api/translations/:lang', requireAuth, (req, res) => {
+    const { lang } = req.params;
+    if (!['en', 'ru'].includes(lang)) {
+        return res.status(400).json({ error: 'Invalid language' });
+    }
+    const filePath = path.join(localesPath, `${lang}.json`);
+    try {
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Translation file not found' });
+        }
+        const content = fs.readFileSync(filePath, 'utf-8');
+        res.json(JSON.parse(content));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read translation file' });
+    }
+});
+
+app.post('/api/translations/:lang', requireAuth, (req, res) => {
+    const { lang } = req.params;
+    const content = req.body;
+    
+    if (!['en', 'ru'].includes(lang)) {
+        return res.status(400).json({ error: 'Invalid language' });
+    }
+    
+    const filePath = path.join(localesPath, `${lang}.json`);
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save translation file' });
     }
 });
 

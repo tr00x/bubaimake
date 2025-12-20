@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import client from "../api/client";
 import { toast } from "sonner";
 import { Toaster } from "../components/ui/sonner";
@@ -7,6 +8,7 @@ import logo from "../assets/58ef5ee199d9ca1c60c8ac56288fb7dd033bd242.png";
 import "./admin.css"; // Import custom CSS
 
 export default function AdminLogin() {
+    const { t } = useTranslation();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -17,10 +19,10 @@ export default function AdminLogin() {
         setIsLoading(true);
         try {
             await client.post("/auth/login", { username, password });
-            toast.success("Вход выполнен успешно");
+            toast.success(t('admin.login.success'));
             navigate("/admin/cars");
         } catch (err) {
-            toast.error("Неверные учетные данные");
+            toast.error(t('admin.login.error'));
         } finally {
             setIsLoading(false);
         }
@@ -34,13 +36,13 @@ export default function AdminLogin() {
                     <div className="admin-login-logo-container">
                         <img src={logo} alt="Logo" className="admin-login-logo" />
                     </div>
-                    <h1 className="admin-login-title">Панель администратора</h1>
-                    <p className="admin-login-subtitle">Войдите для управления контентом</p>
+                    <h1 className="admin-login-title">{t('admin.login.title')}</h1>
+                    <p className="admin-login-subtitle">{t('admin.login.subtitle')}</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="admin-login-form">
                     <div className="admin-input-group">
-                        <label className="admin-label">Имя пользователя</label>
+                        <label className="admin-label">{t('admin.login.username')}</label>
                         <input 
                             type="text"
                             value={username}
@@ -51,7 +53,7 @@ export default function AdminLogin() {
                         />
                     </div>
                     <div className="admin-input-group">
-                        <label className="admin-label">Пароль</label>
+                        <label className="admin-label">{t('admin.login.password')}</label>
                         <input 
                             type="password"
                             value={password}
@@ -69,9 +71,9 @@ export default function AdminLogin() {
                         {isLoading ? (
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <div className="spinner" />
-                                <span>Вход...</span>
+                                <span>{t('admin.login.loading')}</span>
                             </div>
-                        ) : "Войти"}
+                        ) : t('admin.login.submit')}
                     </button>
                 </form>
             </div>

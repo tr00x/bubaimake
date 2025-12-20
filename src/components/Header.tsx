@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Search, Menu, Phone, Car, FileText, Youtube, MapPin, Clock, Mail } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "./ui/sheet";
 import { LogoIcon } from "./ui/Icons";
 
 export default function Header() {
+  const { t, i18n } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === 'ru' ? 'en' : 'ru');
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -24,10 +30,10 @@ export default function Header() {
   };
 
   const navLinks = [
-    { name: "YouTube", href: "/#youtube", icon: Youtube },
-    { name: "Каталог", href: "/#catalog", icon: Car },
-    { name: "Услуги", href: "/#services", icon: FileText },
-    { name: "Контакты", href: "/#contacts", icon: Phone },
+    { name: t('header.youtube'), href: "/#youtube", icon: Youtube },
+    { name: t('header.catalog'), href: "/#catalog", icon: Car },
+    { name: t('header.services'), href: "/#services", icon: FileText },
+    { name: t('header.contacts'), href: "/#contacts", icon: Phone },
   ];
 
   const isHome = location.pathname === "/";
@@ -44,7 +50,11 @@ export default function Header() {
     >
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-3 md:py-4 flex items-center justify-between gap-4">
         {/* Left: Logo */}
-        <Link to="/" className="shrink-0 hover:opacity-80 transition-opacity">
+        <Link 
+          to="/" 
+          className="shrink-0 hover:opacity-80 transition-opacity"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
           <div className="h-[32px] md:h-[40px] relative shrink-0 w-auto aspect-[96/40]">
             <LogoIcon className="block size-full" />
           </div>
@@ -66,6 +76,16 @@ export default function Header() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3 md:gap-4 flex-1 md:flex-none justify-end">
+          {/* Language Switcher */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={toggleLanguage}
+            className="w-10 h-10 rounded-xl hover:bg-secondary font-medium"
+          >
+            {i18n.language.toUpperCase()}
+          </Button>
+
           {/* Search */}
           <div className="flex gap-2 h-10 md:h-11 items-center px-3 md:px-4 bg-secondary/50 rounded-xl border border-transparent hover:border-border hover:bg-background transition-all flex-1 md:flex-none md:w-48 lg:w-60 group cursor-text focus-within:border-ring focus-within:bg-background">
             <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
@@ -146,8 +166,8 @@ export default function Header() {
                        <div className="flex gap-3 items-start">
                           <Clock className="w-4 h-4 text-primary mt-1" />
                           <div className="flex flex-col gap-1 text-sm">
-                              <span className="font-medium">Пн-Сб: 9:00 - 19:00</span>
-                              <span className="text-muted-foreground">Вс: Выходной</span>
+                              <span className="font-medium">{t('header.working_hours')}</span>
+                              <span className="text-muted-foreground">{t('header.sunday_off')}</span>
                           </div>
                        </div>
                     </div>

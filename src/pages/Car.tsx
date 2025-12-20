@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { motion, Variants } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import imgBmwM5Competition from "../assets/5ff7312c3dc0a1014ede77a74beefcf8924374ee.png";
 import {
   Breadcrumb,
@@ -22,21 +23,36 @@ import { ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Gauge, Fuel, Calendar
 import client from "../api/client";
 import { CarCard } from "../components/CarCard";
 import ManagerContactModal from "../components/ManagerContactModal";
+import { getLocalizedValue } from "../utils/localization";
 
 type CarData = {
   id: string;
   title: string;
+  title_ru?: string;
+  title_en?: string;
   priceUsd: number;
   year: number;
   mileage: number;
   transmission: string;
+  transmission_ru?: string;
+  transmission_en?: string;
   horsepower: number;
   topSpeed: number;
   fuelType: string;
+  fuelType_ru?: string;
+  fuelType_en?: string;
   condition: string;
+  condition_ru?: string;
+  condition_en?: string;
   descriptionMd: string;
+  description_ru?: string;
+  description_en?: string;
+  specs_ru?: string;
+  specs_en?: string;
   status: string;
   tags: string; // CSV
+  tags_ru?: string;
+  tags_en?: string;
   labels: string; // CSV
   images: { pathOrUrl: string; isMain: boolean }[];
 };
@@ -57,11 +73,12 @@ const itemVariants: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
+    transition: { duration: 0.3, ease: "easeOut" }
   }
 };
 
 export default function CarPage() {
+  const { t, i18n } = useTranslation();
   const { slug } = useParams(); // Using ID as slug
   const [car, setCar] = useState<CarData | null>(null);
   const [similarCars, setSimilarCars] = useState<CarData[]>([]);
@@ -172,15 +189,36 @@ export default function CarPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (loading) return <div className="p-10 text-center">Загрузка...</div>;
-  if (!car) return <div className="p-10 text-center">Автомобиль не найден</div>;
+  if (loading) return <div className="p-10 text-center">{t('catalog.loading')}</div>;
+  if (!car) return <div className="p-10 text-center">{t('catalog.no_cars')}</div>;
 
   const images = car.images && car.images.length > 0
     ? car.images.map(i => i.pathOrUrl)
     : [imgBmwM5Competition];
 
+  // Localization logic
+  const currentLang = i18n.language;
+
+  const title = currentLang === 'en' ? (car.title_en || car.title) : (car.title_ru || car.title);
+  const fuelType = getLocalizedValue(t, currentLang, car.fuelType_ru, car.fuelType_en, car.fuelType, 'filter_');
+  const transmission = getLocalizedValue(t, currentLang, car.transmission_ru, car.transmission_en, car.transmission, 'filter_');
+  const condition = getLocalizedValue(t, currentLang, car.condition_ru, car.condition_en, car.condition, 'filter_');
+  const rawDescription = currentLang === 'en' ? (car.description_en || car.descriptionMd) : (car.description_ru || car.descriptionMd);
+  const specsField = currentLang === 'en' ? car.specs_en : car.specs_ru;
+  
+  const descriptionMain = rawDescription?.split("**Комплектация:**")[0];
+  const descriptionSpecs = rawDescription?.split("**Комплектация:**")[1];
+  const finalSpecs = specsField || descriptionSpecs;
+
   // Transform DB data to Display format
-  const tagsList = car.tags ? car.tags.split(',') : [];
+  const rawTags = currentLang === 'en' ? (car.tags_en || car.tags) : (car.tags_ru || car.tags);
+  const rawTagsList = rawTags ? rawTags.split(',').filter(tag => tag.trim() !== '') : [];
+  const tagsList = rawTagsList.filter(t => 
+    t.trim() !== car.year.toString() && 
+    t.trim().toLowerCase() !== fuelType.toLowerCase() && 
+    t.trim().toLowerCase() !== transmission.toLowerCase()
+  );
+  
   const priceStr = `$${car.priceUsd.toLocaleString()}`;
 
   return (
@@ -194,15 +232,15 @@ export default function CarPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/">Главная</BreadcrumbLink>
+              <BreadcrumbLink href="/">{t('header.menu')}</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/catalog">Каталог</BreadcrumbLink>
+              <BreadcrumbLink href="/catalog">{t('header.catalog')}</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{car.title}</BreadcrumbPage>
+              <BreadcrumbPage>{title}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -217,7 +255,7 @@ export default function CarPage() {
         >
           <div className="bg-background/90 backdrop-blur-md border border-border rounded-xl px-4 py-3 flex items-center justify-between">
             <div className="flex flex-col gap-1 md:gap-0 md:flex-row md:items-center">
-              <span className="text-[15px] font-bold text-foreground mr-4">{car.title}</span>
+              <span className="text-[15px] font-bold text-foreground mr-4">{title}</span>
               
               <div className="flex items-center gap-3 text-xs md:text-sm text-muted-foreground font-medium">
                 <span className="flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
@@ -226,11 +264,11 @@ export default function CarPage() {
                 </span>
                 <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
                    <Gauge className="w-3.5 h-3.5" />
-                   {car.horsepower} л.с.
+                   {car.horsepower} {t('catalog.hp')}
                 </span>
                 <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
                    <Fuel className="w-3.5 h-3.5" />
-                   {car.fuelType}
+                   {fuelType}
                 </span>
               </div>
             </div>
@@ -253,15 +291,18 @@ export default function CarPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div className="flex flex-col gap-5" variants={itemVariants}>
           <h1 className="text-3xl md:text-4xl font-medium text-foreground leading-tight">
-            {car.title}
+            {title}
           </h1>
           <div className="flex flex-wrap gap-2">
-            {tagsList.map((t) => (
+            <span className="px-2.5 py-1 rounded-md border border-border text-foreground text-[11px] font-semibold uppercase tracking-wider">
+              {car.year}
+            </span>
+            {tagsList.map((tag) => (
               <span
-                key={t}
-                className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold uppercase tracking-wider ${t === "Горячее" ? "border-red-500 text-red-600" : "border-border text-foreground"}`}
+                key={tag}
+                className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold uppercase tracking-wider ${tag === "Горячее" ? "border-red-500 text-red-600" : "border-border text-foreground"}`}
               >
-                {t}
+                {tag}
               </span>
             ))}
           </div>
@@ -271,51 +312,51 @@ export default function CarPage() {
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Gauge className="w-4 h-4" />
-                <span className="text-xs">Макс. скорость</span>
+                <span className="text-xs">{t('car_card.speed')}</span>
               </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `${car.topSpeed} км/ч` : "—"}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `${car.topSpeed} ${t('catalog.kmh')}` : "—"}</span>
             </div>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Gauge className="w-4 h-4" />
-                <span className="text-xs">Разгон 0-100</span>
+                <span className="text-xs">{t('car_card.acceleration')}</span>
               </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `3.5 сек` : "—"}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `3.5 ${t('catalog.sec')}` : "—"}</span>
             </div>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Gauge className="w-4 h-4" />
-                <span className="text-xs">Мощность</span>
+                <span className="text-xs">{t('car_card.power')}</span>
               </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.horsepower} л.с.</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{car.horsepower} {t('catalog.hp')}</span>
             </div>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Fuel className="w-4 h-4" />
-                <span className="text-xs">Тип топлива</span>
+                <span className="text-xs">{t('car_page.fuel_type')}</span>
               </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.fuelType}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{fuelType}</span>
             </div>
-             <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                <span className="text-xs">Год выпуска</span>
+                <Cog className="w-4 h-4" />
+                <span className="text-xs">{t('admin.transmission')}</span>
               </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.year}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{transmission}</span>
             </div>
              <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <BadgeCheck className="w-4 h-4" />
-                <span className="text-xs">Состояние</span>
+                <span className="text-xs">{t('car_page.condition')}</span>
               </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.condition === 'new' ? 'Новый' : 'С пробегом'}</span>
+              <span className="text-lg md:text-xl font-medium text-foreground">{condition}</span>
             </div>
           </div>
 
           <div className="mt-auto pt-4 border-t border-border">
              <div className="flex items-center gap-2 text-muted-foreground">
                 
-                <span className="text-sm font-medium">Стоимость</span>
+                <span className="text-sm font-medium">{t('car_page.price')}</span>
               </div>
               <span className="text-[15px] leading-none sm:text-4xl font-bold text-foreground tracking-tight">{priceStr}</span>
             </div>
@@ -331,7 +372,7 @@ export default function CarPage() {
             <motion.img
               key={activeImageIndex}
               src={images[activeImageIndex]}
-              alt={car.title}
+              alt={title}
               className="w-full h-full object-cover"
               initial={{ opacity: 0, scale: 1.05 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -343,7 +384,7 @@ export default function CarPage() {
 
       <motion.div className="flex flex-col gap-3" variants={itemVariants}>
         <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-semibold">Больше фото</h2>
+          <h2 className="text-xl md:text-2xl font-semibold">{t('car_page.more_photos')}</h2>
           <div className="flex gap-2">
             <button
               onClick={handlePrevImage}
@@ -407,8 +448,8 @@ export default function CarPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         <motion.div className="lg:col-span-2 flex flex-col gap-6" variants={itemVariants}>
           <div>
-            <h2 className="text-xl md:text-2xl font-semibold mb-4">Описание</h2>
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{car.descriptionMd?.split("**Комплектация:**")[0]}</p>
+            <h2 className="text-xl md:text-2xl font-semibold mb-4">{t('car_page.description')}</h2>
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-line break-words">{descriptionMain}</p>
           </div>
 
 
@@ -417,8 +458,8 @@ export default function CarPage() {
         <motion.div className="flex flex-col gap-3" variants={itemVariants}>
           <div className="rounded-xl border border-border p-6 bg-background sticky top-[100px] flex flex-col gap-6">
             <div>
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Консультация</span>
-              <p className="text-lg font-medium mt-3 text-foreground leading-snug">Рассчитаем доставку и растаможку, подберём лучшее предложение</p>
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t('car_page.consultation')}</span>
+              <p className="text-lg font-medium mt-3 text-foreground leading-snug">{t('car_page.consultation_desc')}</p>
             </div>
             
             <div className="w-full h-px bg-border"></div>
@@ -426,23 +467,23 @@ export default function CarPage() {
             <ul className="flex flex-col gap-4">
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <UserCheck className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium">Персональный менеджер</span>
+                <span className="font-medium">{t('car_page.personal_manager')}</span>
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <FileCheck className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium"> Прозрачные условия сделки</span>
+                <span className="font-medium">{t('car_page.transparent_terms')}</span>
               </li>
               <li className="flex items-center gap-2 text-sm text-foreground">
                 <ShieldCheck className="w-5 h-5 text-muted-foreground"  />
-                <span className="font-medium"> Документы и страхование</span>
+                <span className="font-medium">{t('car_page.docs_insurance')}</span>
               </li>
             </ul>
 
-            <ManagerContactModal carTitle={car.title} carId={car.id} carPrice={priceStr} carImage={images[0]}>
+            <ManagerContactModal carTitle={title} carId={car.id} carPrice={priceStr} carImage={images[0]}>
               <button className="mt-4 w-full group relative overflow-hidden rounded-xl bg-foreground text-background py-4 font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]">
                 <div className="relative z-10 flex items-center justify-center gap-2">
                   <Mail className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:-rotate-12" />
-                  <span>Написать менеджеру</span>
+                  <span>{t('car_page.contact_manager')}</span>
                 </div>
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
               </button>
@@ -454,7 +495,7 @@ export default function CarPage() {
       {similarCars.length > 0 && (
         <motion.div className="flex flex-col gap-4 mt-24" variants={itemVariants}>
           <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-semibold">Похожие автомобили</h2>
+            <h2 className="text-xl md:text-2xl font-semibold">{t('car_page.similar_cars')}</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => scrollSimilar('left')}
@@ -479,14 +520,24 @@ export default function CarPage() {
           >
             {similarCars.map((item) => {
               const mainImg = item.images?.find(i => i.isMain)?.pathOrUrl || item.images?.[0]?.pathOrUrl || imgBmwM5Competition;
+              
+              // Localization for similar cars
+              const itemTitle = currentLang === 'en' ? (item.title_en || item.title) : (item.title_ru || item.title);
+              const itemFuel = getLocalizedValue(t, currentLang, item.fuelType_ru, item.fuelType_en, item.fuelType, 'filter_');
+              const itemTrans = getLocalizedValue(t, currentLang, item.transmission_ru, item.transmission_en, item.transmission, 'filter_');
+              
+              const itemRawTags = currentLang === 'en' ? (item.tags_en || item.tags) : (item.tags_ru || item.tags);
+              const itemTags = itemRawTags ? itemRawTags.split(',').filter(tag => tag.trim() !== '') : [];
+
               return (
                 <div key={item.id} className="min-w-[280px] md:min-w-[320px] snap-start">
                   <CarCard
-                    title={item.title}
+                    title={itemTitle}
                     image={mainImg}
-                    tags={item.tags ? item.tags.split(',') : []}
-                    meta={[item.year.toString(), item.fuelType, item.transmission]}
-                    specs={{ hp: `${item.horsepower} л.с.`, zeroTo100: item.topSpeed ? '3.5 сек' : '—' }}
+                    tags={itemTags}
+                    year={item.year}
+                    meta={[itemFuel, itemTrans]}
+                    specs={{ hp: `${item.horsepower} ${t('catalog.hp')}`, zeroTo100: item.topSpeed ? `3.5 ${t('catalog.sec')}` : '—' }}
                     price={`$${item.priceUsd.toLocaleString()}`}
                     id={item.id}
                   />

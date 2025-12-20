@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "./ui/button";
 import { 
@@ -31,7 +32,7 @@ const ServiceCard = React.forwardRef<HTMLDivElement, ServiceCardProps>(({ icon, 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
       className={`flex flex-col bg-card rounded-2xl border border-border hover:border-ring/50 transition-colors group h-full ${className}`}
     >
       <div className="p-6 md:p-8 flex flex-col gap-4">
@@ -56,64 +57,66 @@ const ServiceCard = React.forwardRef<HTMLDivElement, ServiceCardProps>(({ icon, 
 });
 ServiceCard.displayName = "ServiceCard";
 
-const servicesData = [
-  {
-    icon: <SalesIcon/>,
-    title: "Продажа автомобилей",
-    description: "Новые и авто с пробегом, прозрачные условия. Огромный выбор в наличии и под заказ.",
-    features: ["Широкий выбор марок", "Проверенная юридическая чистота", "Помощь в оформлении"]
-  },
-  {
-    icon: <SearchIcon/>,
-    title: "Подбор автомобилей",
-    description: "Находим нужную комплектацию и идеальное состояние под ваш бюджет.",
-    features: ["Глубокая аналитика рынка", "Техническая инспекция", "Ведение переговоров"]
-  },
-  {
-    icon: <PartsIcon/>,
-    title: "Подбор запчастей",
-    description: "Оригинал и качественные аналоги с быстрой доставкой.",
-    features: ["Подбор по VIN-коду", "Гарантия на детали", "Экспресс-доставка"]
-  },
-  {
-    icon: <AccIcon/>,
-    title: "Автоаксессуары",
-    description: "Всё для комфорта и стайлинга вашего автомобиля.",
-    features: ["Премиальные бренды", "Профессиональная установка", "Гарантийная поддержка"]
-  },
-  {
-    icon: <RepairIcon/>,
-    title: "Сервис и ремонт",
-    description: "Диагностика, слесарные работы, электрика и кузовной ремонт любой сложности.",
-    features: ["Оригинальные расходники", "Квалифицированные механики", "Гарантия на работы"]
-  },
-  {
-    icon: <TuningIcon/>,
-    title: "Тюнинг ателье",
-    description: "Технические доработки и изменение внешнего вида под ваши задачи.",
-    features: ["Чип-тюнинг (Stage 1-3)", "Аэродинамические обвесы", "Перешив салона"]
-  },
-  {
-    icon: <RegIcon/>,
-    title: "Регистрация в ОАЭ",
-    description: "Постановка на учет, страхование и снятие с учета для экспорта.",
-    features: ["Официальное оформление", "Ускоренная процедура", "Помощь с номерами"]
-  },
-  {
-    icon: <TransportIcon/>,
-    title: "Логистика и экспорт",
-    description: "Доставка автомобилей в любую точку мира под ключ.",
-    features: ["Авиа, море и автовозы", "Таможенное оформление", "Страхование груза"]
-  },
-  {
-    icon: <ContainerIcon/>,
-    title: "Контейнерная погрузка",
-    description: "Профессиональная загрузка и крепление автомобилей для безопасной транспортировки.",
-    features: ["Спецкрепления и обрешетка", "Фотоотчет погрузки", "Оптимизация пространства"]
-  }
-];
-
 export default function ServicesSection() {
+  const { t } = useTranslation();
+
+  const servicesData = [
+    {
+      icon: <SalesIcon/>,
+      title: t('services.items.sales.title'),
+      description: t('services.items.sales.description'),
+      features: t('services.items.sales.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <SearchIcon/>,
+      title: t('services.items.search.title'),
+      description: t('services.items.search.description'),
+      features: t('services.items.search.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <PartsIcon/>,
+      title: t('services.items.parts.title'),
+      description: t('services.items.parts.description'),
+      features: t('services.items.parts.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <AccIcon/>,
+      title: t('services.items.accessories.title'),
+      description: t('services.items.accessories.description'),
+      features: t('services.items.accessories.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <RepairIcon/>,
+      title: t('services.items.repair.title'),
+      description: t('services.items.repair.description'),
+      features: t('services.items.repair.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <TuningIcon/>,
+      title: t('services.items.tuning.title'),
+      description: t('services.items.tuning.description'),
+      features: t('services.items.tuning.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <RegIcon/>,
+      title: t('services.items.registration.title'),
+      description: t('services.items.registration.description'),
+      features: t('services.items.registration.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <TransportIcon/>,
+      title: t('services.items.logistics.title'),
+      description: t('services.items.logistics.description'),
+      features: t('services.items.logistics.features', { returnObjects: true }) as string[]
+    },
+    {
+      icon: <ContainerIcon/>,
+      title: t('services.items.container.title'),
+      description: t('services.items.container.description'),
+      features: t('services.items.container.features', { returnObjects: true }) as string[]
+    }
+  ];
+
   const [isExpanded, setIsExpanded] = useState(false);
   const visibleServices = isExpanded ? servicesData : servicesData.slice(0, 4);
 
@@ -140,10 +143,10 @@ export default function ServicesSection() {
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
       >
-         <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">Направления</span>
-         <h2 className="text-3xl md:text-4xl font-medium text-foreground leading-[1.1]">Услуги компании</h2>
+         <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">{t('services.directions')}</span>
+         <h2 className="text-3xl md:text-4xl font-medium text-foreground leading-[1.1]">{t('services.section_title')}</h2>
          <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-            Полный комплекс услуг для автовладельцев: от подбора и покупки до доставки и сервисного обслуживания.
+            {t('services.section_subtitle')}
          </p>
       </motion.div>
 
@@ -171,7 +174,7 @@ export default function ServicesSection() {
                 className="gap-2 rounded-full px-8 h-12 text-base font-medium hover:bg-primary hover:text-primary-foreground transition-all duration-300 flex items-center justify-center"
             >
                 <span className="relative flex items-center gap-2">
-                    {isExpanded ? "Свернуть" : "Показать все услуги"}
+                    {isExpanded ? t('services.collapse') : t('services.show_all')}
                     <motion.div
                         animate={{ rotate: isExpanded ? 180 : 0 }}
                         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}

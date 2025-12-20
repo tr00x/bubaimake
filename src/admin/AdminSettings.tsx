@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import client from "../api/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Bot, Users, Save, Trash2, Plus, Eye, EyeOff, Copy, Check, Lock } from "lucide-react";
 
 export default function AdminSettings() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [botToken, setBotToken] = useState("");
+  const [managerWhatsapp, setManagerWhatsapp] = useState("");
+  const [managerTelegram, setManagerTelegram] = useState("");
   const [chatIds, setChatIds] = useState<string[]>([]);
   const [newChatId, setNewChatId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -24,13 +28,22 @@ export default function AdminSettings() {
       if (res.data.TELEGRAM_BOT_TOKEN) {
         setBotToken(res.data.TELEGRAM_BOT_TOKEN);
       }
+      if (res.data.MANAGER_WHATSAPP) {
+        setManagerWhatsapp(res.data.MANAGER_WHATSAPP);
+      }
+      if (res.data.MANAGER_TELEGRAM) {
+        setManagerTelegram(res.data.MANAGER_TELEGRAM);
+      }
       if (res.data.TELEGRAM_CHAT_ID) {
         const ids = res.data.TELEGRAM_CHAT_ID.split(",").map((id: string) => id.trim()).filter(Boolean);
         setChatIds(ids);
       }
+      if (res.data.ADMIN_USERNAME) {
+        setUsername(res.data.ADMIN_USERNAME);
+      }
     } catch (error) {
       console.error("Failed to fetch settings", error);
-      toast.error("Failed to load settings");
+      toast.error(t('admin.settings.load_error'));
     } finally {
       setLoading(false);
     }
@@ -40,7 +53,7 @@ export default function AdminSettings() {
     if (!newChatId.trim()) return;
     const id = newChatId.trim();
     if (chatIds.includes(id)) {
-      toast.error("ID already added");
+      toast.error(t('admin.settings.id_exists'));
       return;
     }
     setChatIds([...chatIds, id]);
@@ -55,14 +68,22 @@ export default function AdminSettings() {
     setSaving(true);
     try {
       const chatIdString = chatIds.join(",");
-      await client.post("/admin/env", {
+      const payload: any = {
         TELEGRAM_BOT_TOKEN: botToken,
-        TELEGRAM_CHAT_ID: chatIdString
-      });
-      toast.success("Settings saved successfully");
+        TELEGRAM_CHAT_ID: chatIdString,
+        MANAGER_WHATSAPP: managerWhatsapp,
+        MANAGER_TELEGRAM: managerTelegram
+      };
+      
+      if (username) payload.ADMIN_USERNAME = username;
+      if (password) payload.ADMIN_PASSWORD = password;
+
+      await client.post("/admin/env", payload);
+      toast.success(t('admin.settings.saved_success'));
+      setPassword(""); // Clear password field after save for security
     } catch (error) {
       console.error("Failed to save settings", error);
-      toast.error("Error saving settings");
+      toast.error(t('admin.settings.save_error'));
     } finally {
       setSaving(false);
     }
@@ -71,14 +92,14 @@ export default function AdminSettings() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success("Copied!");
+    toast.success(t('admin.settings.copied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading settings...</div>
+        <div className="text-gray-500">{t('catalog.loading')}</div>
       </div>
     );
   }
@@ -87,8 +108,8 @@ export default function AdminSettings() {
     <div className="space-y-6">
       <div className="admin-page-header">
         <div>
-          <h2 className="admin-page-title">Settings</h2>
-          <p className="admin-page-desc">Manage integrations and access</p>
+          <h2 className="admin-page-title">{t('admin.settings.title')}</h2>
+          <p className="admin-page-desc">{t('admin.settings.desc')}</p>
         </div>
       </div>
 
@@ -100,16 +121,16 @@ export default function AdminSettings() {
               <Lock className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="admin-card-title">Admin Access</h2>
+              <h2 className="admin-card-title">{t('admin.settings.access_title')}</h2>
               <p className="admin-card-subtitle">
-                Manage your admin login credentials.
+                {t('admin.settings.access_subtitle')}
               </p>
             </div>
           </div>
 
           <div className="admin-settings-grid" style={{ maxWidth: '600px' }}>
             <div>
-              <label className="admin-label mb-2">Username</label>
+              <label className="admin-label mb-2">{t('admin.settings.username')}</label>
               <input
                 type="text"
                 value={username}
@@ -119,13 +140,13 @@ export default function AdminSettings() {
               />
             </div>
             <div>
-              <label className="admin-label mb-2">Password</label>
+              <label className="admin-label mb-2">{t('admin.settings.password')}</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
                   type={showToken ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter new password"
+                  placeholder={t('admin.settings.password_placeholder')}
                   className="admin-input"
                   style={{ paddingRight: '3rem' }}
                 />
@@ -143,6 +164,50 @@ export default function AdminSettings() {
           </div>
         </section>
 
+        {/* Manager Contacts Section */}
+        <section className="admin-card">
+          <div className="admin-card-header">
+            <div className="admin-card-icon icon-green">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="admin-card-title">{t('admin.settings.manager_contacts_title')}</h2>
+              <p className="admin-card-subtitle">
+                {t('admin.settings.manager_contacts_subtitle')}
+              </p>
+            </div>
+          </div>
+
+          <div className="admin-settings-grid" style={{ maxWidth: '600px' }}>
+            <div>
+              <label className="admin-label mb-2">{t('admin.settings.whatsapp_link')}</label>
+              <input
+                type="text"
+                value={managerWhatsapp}
+                onChange={(e) => setManagerWhatsapp(e.target.value)}
+                placeholder={t('admin.settings.whatsapp_placeholder')}
+                className="admin-input"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('admin.settings.whatsapp_instruction')}
+              </p>
+            </div>
+            <div>
+              <label className="admin-label mb-2">{t('admin.settings.telegram_link')}</label>
+              <input
+                type="text"
+                value={managerTelegram}
+                onChange={(e) => setManagerTelegram(e.target.value)}
+                placeholder={t('admin.settings.telegram_placeholder')}
+                className="admin-input"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('admin.settings.telegram_instruction')}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Telegram Bot Section */}
         <section className="admin-card">
           <div className="admin-card-header">
@@ -150,16 +215,16 @@ export default function AdminSettings() {
               <Bot className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="admin-card-title">Telegram Bot</h2>
+              <h2 className="admin-card-title">{t('admin.settings.telegram_title')}</h2>
               <p className="admin-card-subtitle">
-                Configure bot connection for receiving inquiries.
+                {t('admin.settings.telegram_subtitle')}
               </p>
             </div>
           </div>
 
           <div className="admin-settings-grid" style={{ maxWidth: '600px' }}>
             <div>
-              <label className="admin-label mb-2">Bot Token</label>
+              <label className="admin-label mb-2">{t('admin.settings.bot_token')}</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
                   type={showToken ? "text" : "password"}
@@ -191,7 +256,7 @@ export default function AdminSettings() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Get token from <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">@BotFather</a>
+                {t('admin.settings.get_token')} <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">@BotFather</a>
               </p>
             </div>
           </div>
@@ -204,9 +269,9 @@ export default function AdminSettings() {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="admin-card-title">Recipients</h2>
+              <h2 className="admin-card-title">{t('admin.settings.recipients_title')}</h2>
               <p className="admin-card-subtitle">
-                List of Telegram IDs to receive notifications.
+                {t('admin.settings.recipients_subtitle')}
               </p>
             </div>
           </div>
@@ -216,7 +281,7 @@ export default function AdminSettings() {
               <input
                 value={newChatId}
                 onChange={(e) => setNewChatId(e.target.value)}
-                placeholder="Enter Telegram Chat ID"
+                placeholder={t('admin.settings.enter_chat_id')}
                 className="admin-input"
                 style={{ fontFamily: 'monospace' }}
                 onKeyDown={(e) => {
@@ -233,16 +298,16 @@ export default function AdminSettings() {
                 style={{ width: 'auto', marginTop: 0 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add
+                {t('admin.settings.add')}
               </button>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Active Recipients ({chatIds.length})</div>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">{t('admin.settings.active_recipients')} ({chatIds.length})</div>
               
               {chatIds.length === 0 ? (
                 <div className="admin-empty-state">
-                   <span>No recipients added</span>
+                   <span>{t('admin.settings.no_recipients')}</span>
                 </div>
               ) : (
                 <div className="grid gap-2">
@@ -271,8 +336,8 @@ export default function AdminSettings() {
 
             <div className="admin-tip">
                <p>
-                  💡 To get your ID, message <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer">@userinfobot</a>. 
-                  After adding ID, don't forget to press <strong>/start</strong> in your bot's chat.
+                  💡 {t('admin.settings.how_to_get_id')} <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer">@userinfobot</a>. 
+                  {t('admin.settings.start_bot_reminder')}
                </p>
             </div>
           </div>
@@ -288,12 +353,12 @@ export default function AdminSettings() {
             {saving ? (
               <>
                 <div className="spinner" />
-                Saving...
+                {t('admin.settings.saving')}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Changes
+                {t('admin.settings.save_changes')}
               </>
             )}
           </button>

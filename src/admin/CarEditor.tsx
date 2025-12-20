@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import client from "../api/client";
 import { Trash2, Upload, ArrowLeft, Save, Star, Loader2, Plus, X } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -20,21 +21,36 @@ import {
     CardHeader,
     CardTitle,
 } from "../components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { toast } from "sonner";
+import { LocalizedSelect } from "./components/LocalizedSelect";
+import { TagInput } from "./components/TagInput";
 
 type CarForm = {
     title: string;
+    title_ru?: string;
+    title_en?: string;
     priceUsd: number;
     year: number;
     mileage: number;
     transmission: string;
+    transmission_ru?: string;
+    transmission_en?: string;
     horsepower: number;
     topSpeed: number;
     fuelType: string;
+    fuelType_ru?: string;
+    fuelType_en?: string;
     condition: string;
+    condition_ru?: string;
+    condition_en?: string;
     descriptionMd: string;
+    description_ru?: string;
+    description_en?: string;
     status: string;
     tags: string;
+    tags_ru?: string;
+    tags_en?: string;
     labels: string;
     images: { pathOrUrl: string; isMain: boolean; sortOrder: number }[];
     youtubeUrl: string;
@@ -42,23 +58,36 @@ type CarForm = {
 
 const initialForm: CarForm = {
     title: "",
+    title_ru: "",
+    title_en: "",
     priceUsd: 0,
     year: new Date().getFullYear(),
     mileage: 0,
     transmission: "Automatic",
+    transmission_ru: "",
+    transmission_en: "",
     horsepower: 0,
     topSpeed: 0,
     fuelType: "Petrol",
+    fuelType_ru: "",
+    fuelType_en: "",
     condition: "Used",
+    condition_ru: "",
+    condition_en: "",
     descriptionMd: "",
+    description_ru: "",
+    description_en: "",
     status: "active",
     tags: "New,Hot",
+    tags_ru: "",
+    tags_en: "",
     labels: "",
     images: [],
     youtubeUrl: ""
 };
 
 export default function CarEditor() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const [form, setForm] = useState<CarForm>(initialForm);
@@ -69,14 +98,26 @@ export default function CarEditor() {
     useEffect(() => {
         if (id) {
             client.get(`/cars/${id}`)
-                .then(res => setForm(res.data))
+                .then(res => {
+                    const data = res.data;
+                    // Fallback for legacy data
+                    if (!data.title_ru && data.title) data.title_ru = data.title;
+                    if (!data.description_ru && data.descriptionMd) data.description_ru = data.descriptionMd;
+                    if (!data.tags_ru && data.tags) data.tags_ru = data.tags;
+                    if (!data.tags_en && data.tags) data.tags_en = data.tags;
+                    
+                    // Fallback for specs if missing (assuming stored in legacy fields if localized ones are empty)
+                    // Note: If specs are completely missing in DB, we can't do much.
+                    
+                    setForm({ ...initialForm, ...data });
+                })
                 .catch(err => {
-                    console.error(err);
-                    toast.error("Failed to load vehicle details");
+                    console.error("Failed to fetch car", err);
+                    toast.error(t('admin.fetch_error'));
                 })
                 .finally(() => setLoading(false));
         }
-    }, [id]);
+    }, [id, t]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -130,23 +171,48 @@ export default function CarEditor() {
         }));
     };
 
+    const [activeTab, setActiveTab] = useState("ru");
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
+        
+        // Ensure legacy/required fields are populated
+        // If "Custom" is selected for dropdowns, try to use the English value as the fallback for the main column
+        const processCustomField = (val: string, valEn?: string, valRu?: string) => {
+            if (val === "Custom") {
+                return valEn || valRu || "Custom";
+            }
+            return val;
+        };
+
+        const submissionData = {
+            ...form,
+            title: form.title || form.title_en || form.title_ru || "Untitled",
+            descriptionMd: form.descriptionMd || form.description_en || form.description_ru || "",
+            tags: form.tags_en || form.tags || "", // Prefer EN tags for main field
+            
+            transmission: processCustomField(form.transmission, form.transmission_en, form.transmission_ru),
+            fuelType: processCustomField(form.fuelType, form.fuelType_en, form.fuelType_ru),
+            condition: processCustomField(form.condition, form.condition_en, form.condition_ru),
+        };
+
         try {
             if (id) {
-                await client.put(`/cars/${id}`, form);
-                toast.success("Vehicle updated successfully");
+                await client.put(`/cars/${id}`, submissionData);
+                toast.success(t('admin.save_success'));
             } else {
-                await client.post("/cars", form);
-                toast.success("Vehicle created successfully");
+                await client.post("/cars", submissionData);
+                toast.success(t('admin.save_success'));
             }
-            navigate("/admin/cars");
+            // Delay navigation slightly so user can see the success message
+            setTimeout(() => {
+                navigate("/admin/cars");
+            }, 1000);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to save vehicle");
-        } finally {
-            setSaving(false);
+            toast.error(t('admin.save_error'));
+            setSaving(false); // Only reset saving if error, otherwise keep disabled until navigation
         }
     };
 
@@ -178,8 +244,8 @@ export default function CarEditor() {
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{id ? "Edit Vehicle" : "New Vehicle"}</h1>
-                        <p className="text-sm text-muted-foreground">{id ? "Update vehicle details and media" : "Add a new vehicle to your inventory"}</p>
+                        <h1 className="text-2xl font-bold tracking-tight">{id ? t('admin.edit_vehicle') : t('admin.new_vehicle')}</h1>
+                        <p className="text-sm text-muted-foreground">{id ? t('admin.edit_vehicle_desc') : t('admin.new_vehicle_desc')}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -188,11 +254,11 @@ export default function CarEditor() {
                         variant="outline" 
                         onClick={() => navigate("/admin/cars")}
                     >
-                        Cancel
+                        {t('admin.cancel')}
                     </Button>
                     <Button type="submit" disabled={saving}>
                         {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {id ? "Save Changes" : "Create Vehicle"}
+                        {id ? t('admin.save_changes') : t('admin.create_vehicle')}
                     </Button>
                 </div>
             </div>
@@ -203,26 +269,68 @@ export default function CarEditor() {
                     {/* Basic Info */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Basic Information</CardTitle>
-                            <CardDescription>Essential details about the vehicle.</CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>{t('admin.basic_info')}</CardTitle>
+                                    <CardDescription>{t('admin.basic_info_desc')}</CardDescription>
+                                </div>
+                                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[200px]">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="ru">RU</TabsTrigger>
+                                        <TabsTrigger value="en">EN</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
                         </CardHeader>
                         <CardContent className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="title">Vehicle Title</Label>
-                                <Input
-                                    id="title"
-                                    name="title"
-                                    value={form.title}
-                                    onChange={handleChange}
-                                    placeholder="e.g. 2024 Rolls-Royce Spectre"
-                                    required
-                                    className="text-lg"
-                                />
-                            </div>
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                                <TabsContent value="ru" className="mt-0 space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="title_ru">{t('admin.vehicle_title_ru')}</Label>
+                                        <Input
+                                            id="title_ru"
+                                            name="title_ru"
+                                            value={form.title_ru || ""}
+                                            onChange={handleChange}
+                                            placeholder={t('admin.vehicle_title_ru')}
+                                            className="text-lg"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <TagInput 
+                                            label={`${t('admin.tags')} (RU)`}
+                                            value={form.tags_ru || ""}
+                                            onChange={(val) => setForm(prev => ({ ...prev, tags_ru: val }))}
+                                            placeholder={t('admin.tags_placeholder')}
+                                        />
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="en" className="mt-0 space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="title_en">{t('admin.vehicle_title_en')}</Label>
+                                        <Input
+                                            id="title_en"
+                                            name="title_en"
+                                            value={form.title_en || ""}
+                                            onChange={handleChange}
+                                            placeholder={t('admin.vehicle_title_en')}
+                                            className="text-lg"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <TagInput 
+                                            label={`${t('admin.tags')} (EN)`}
+                                            value={form.tags_en || ""}
+                                            onChange={(val) => setForm(prev => ({ ...prev, tags_en: val }))}
+                                            placeholder={t('admin.tags_placeholder')}
+                                        />
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="priceUsd">Price (USD)</Label>
+                                    <Label htmlFor="priceUsd">{t('admin.price_usd')}</Label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                         <Input
@@ -237,119 +345,119 @@ export default function CarEditor() {
                                     </div>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="status">Status</Label>
+                                    <Label htmlFor="status">{t('admin.status')}</Label>
                                     <Select 
                                         value={form.status} 
                                         onValueChange={(val) => handleSelectChange("status", val)}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select status" />
+                                            <SelectValue placeholder={t('admin.select_status')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="active">Active</SelectItem>
-                                            <SelectItem value="sold">Sold</SelectItem>
-                                            <SelectItem value="hidden">Hidden</SelectItem>
+                                            <SelectItem value="active">{t('admin.status_active')}</SelectItem>
+                                            <SelectItem value="sold">{t('admin.status_sold')}</SelectItem>
+                                            <SelectItem value="hidden">{t('admin.status_hidden')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
+                            
                         </CardContent>
                     </Card>
 
                     {/* Specifications */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Specifications</CardTitle>
-                            <CardDescription>Technical details and features.</CardDescription>
+                            <CardTitle>{t('admin.specifications')}</CardTitle>
+                            <CardDescription>{t('admin.specifications_desc')}</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="year">Year</Label>
-                                <Input
-                                    id="year"
-                                    type="number"
-                                    name="year"
-                                    value={form.year}
-                                    onChange={handleChange}
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="year">{t('admin.year')}</Label>
+                                    <Input
+                                        id="year"
+                                        type="number"
+                                        name="year"
+                                        value={form.year}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="mileage">{t('admin.mileage')}</Label>
+                                    <Input
+                                        id="mileage"
+                                        type="number"
+                                        name="mileage"
+                                        value={form.mileage || ""}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="horsepower">{t('admin.horsepower')}</Label>
+                                    <Input
+                                        id="horsepower"
+                                        type="number"
+                                        name="horsepower"
+                                        value={form.horsepower || ""}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="topSpeed">{t('admin.top_speed')}</Label>
+                                    <Input
+                                        id="topSpeed"
+                                        type="number"
+                                        name="topSpeed"
+                                        value={form.topSpeed || ""}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <LocalizedSelect
+                                    label={t('admin.transmission')}
+                                    value={form.transmission}
+                                    valueRu={form.transmission_ru}
+                                    valueEn={form.transmission_en}
+                                    fieldName="transmission"
+                                    options={[
+                                        { value: "Automatic", label: t('filter_auto') },
+                                        { value: "Manual", label: t('filter_manual') },
+                                        { value: "Robot", label: t('filter_robot') },
+                                    ]}
+                                    onChange={handleSelectChange}
+                                    t={t}
                                 />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="mileage">Mileage (km)</Label>
-                                <Input
-                                    id="mileage"
-                                    type="number"
-                                    name="mileage"
-                                    value={form.mileage}
-                                    onChange={handleChange}
+                                <LocalizedSelect
+                                    label={t('admin.fuel_type')}
+                                    value={form.fuelType}
+                                    valueRu={form.fuelType_ru}
+                                    valueEn={form.fuelType_en}
+                                    fieldName="fuelType"
+                                    options={[
+                                        { value: "Petrol", label: t('filter_petrol') },
+                                        { value: "Diesel", label: t('filter_diesel') },
+                                        { value: "Electric", label: t('filter_electric') },
+                                        { value: "Hybrid", label: t('filter_hybrid') },
+                                    ]}
+                                    onChange={handleSelectChange}
+                                    t={t}
                                 />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="horsepower">Horsepower</Label>
-                                <Input
-                                    id="horsepower"
-                                    type="number"
-                                    name="horsepower"
-                                    value={form.horsepower}
-                                    onChange={handleChange}
+                                <LocalizedSelect
+                                    label={t('admin.condition')}
+                                    value={form.condition}
+                                    valueRu={form.condition_ru}
+                                    valueEn={form.condition_en}
+                                    fieldName="condition"
+                                    options={[
+                                        { value: "Used", label: t('filter_used') },
+                                        { value: "New", label: t('filter_new') },
+                                    ]}
+                                    onChange={handleSelectChange}
+                                    t={t}
                                 />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="topSpeed">Top Speed (km/h)</Label>
-                                <Input
-                                    id="topSpeed"
-                                    type="number"
-                                    name="topSpeed"
-                                    value={form.topSpeed}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="transmission">Transmission</Label>
-                                <Select 
-                                    value={form.transmission} 
-                                    onValueChange={(val) => handleSelectChange("transmission", val)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Automatic">Automatic</SelectItem>
-                                        <SelectItem value="Manual">Manual</SelectItem>
-                                        <SelectItem value="Robot">Robot</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="fuelType">Fuel Type</Label>
-                                <Select 
-                                    value={form.fuelType} 
-                                    onValueChange={(val) => handleSelectChange("fuelType", val)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Petrol">Petrol</SelectItem>
-                                        <SelectItem value="Diesel">Diesel</SelectItem>
-                                        <SelectItem value="Electric">Electric</SelectItem>
-                                        <SelectItem value="Hybrid">Hybrid</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="condition">Condition</Label>
-                                <Select 
-                                    value={form.condition} 
-                                    onValueChange={(val) => handleSelectChange("condition", val)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Used">Used</SelectItem>
-                                        <SelectItem value="New">New</SelectItem>
-                                    </SelectContent>
-                                </Select>
                             </div>
                         </CardContent>
                     </Card>
@@ -357,19 +465,32 @@ export default function CarEditor() {
                     {/* Description */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Detailed Description</CardTitle>
+                            <CardTitle>{t('admin.detailed_description')}</CardTitle>
                             <CardDescription>
-                                Provide a comprehensive description of the vehicle.
+                                {t('admin.detailed_description_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Textarea
-                                name="descriptionMd"
-                                value={form.descriptionMd}
-                                onChange={handleChange}
-                                placeholder="Enter full vehicle description..."
-                                className="min-h-[200px]"
-                            />
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                                <TabsContent value="ru" className="mt-0">
+                                    <Textarea
+                                        name="description_ru"
+                                        value={form.description_ru || ""}
+                                        onChange={handleChange}
+                                        placeholder={t('admin.description_placeholder_ru')}
+                                        className="min-h-[200px]"
+                                    />
+                                </TabsContent>
+                                <TabsContent value="en" className="mt-0">
+                                    <Textarea
+                                        name="description_en"
+                                        value={form.description_en || ""}
+                                        onChange={handleChange}
+                                        placeholder={t('admin.description_placeholder_en')}
+                                        className="min-h-[200px]"
+                                    />
+                                </TabsContent>
+                            </Tabs>
                         </CardContent>
                     </Card>
                 </div>
@@ -378,26 +499,15 @@ export default function CarEditor() {
                 <div className="space-y-8">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Media Gallery</CardTitle>
+                            <CardTitle>{t('admin.media_gallery')}</CardTitle>
                             <CardDescription>
-                                Upload photos and manage video links.
+                                {t('admin.media_gallery_desc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="youtubeUrl">YouTube Video URL</Label>
-                                <Input
-                                    id="youtubeUrl"
-                                    name="youtubeUrl"
-                                    value={form.youtubeUrl}
-                                    onChange={handleChange}
-                                    placeholder="https://youtube.com/..."
-                                />
-                            </div>
-
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <Label>Images ({form.images.length})</Label>
+                                    <Label>{t('admin.images')} ({form.images.length})</Label>
                                     <Button type="button" variant="outline" size="sm" className="cursor-pointer relative" disabled={uploading}>
                                         <input
                                             type="file"
@@ -408,7 +518,7 @@ export default function CarEditor() {
                                             disabled={uploading}
                                         />
                                         {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                                        Upload
+                                        {t('admin.upload')}
                                     </Button>
                                 </div>
 
@@ -467,7 +577,7 @@ export default function CarEditor() {
                                             disabled={uploading}
                                         />
                                         <Plus className="w-8 h-8" />
-                                        <span className="text-xs font-medium">Add Photos</span>
+                                        <span className="text-xs font-medium">{t('admin.add_photos')}</span>
                                     </div>
                                 </div>
                             </div>

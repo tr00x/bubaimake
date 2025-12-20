@@ -1,5 +1,5 @@
 
-# Dubai Cars - Luxury Dynamic Showroom
+# Mashyn Bazar - Luxury Dynamic Showroom
 
 A React-based luxury car showroom application with a dynamic backend powered by Express, Prisma, and SQLite.
 

@@ -81,7 +81,7 @@ const DialogContent = React.forwardRef<
         overflow: 'visible'
       }}
       className={cn(
-        "bg-white grid gap-4 rounded-lg border p-6 duration-200",
+        "bg-white grid gap-4 rounded-lg border p-6 duration-150",
         className,
       )}
       {...props}

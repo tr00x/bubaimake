@@ -13,17 +13,29 @@ datasource db {
 model Car {
   id            String   @id @default(uuid())
   title         String
+  title_ru      String?
+  title_en      String?
   priceUsd      Int
   year          Int
   mileage       Int?
   transmission  String
+  transmission_ru String?
+  transmission_en String?
   horsepower    Int?
   topSpeed      Int?
   fuelType      String
+  fuelType_ru   String?
+  fuelType_en   String?
   condition     String
+  condition_ru  String?
+  condition_en  String?
   descriptionMd String
+  description_ru String?
+  description_en String?
   status        String   // "active" | "hidden" | "reserved"
   tags          String   // JSON string or comma-separated
+  tags_ru       String?
+  tags_en       String?
   labels        String   // JSON string or comma-separated
   youtubeUrl    String?
   createdAt     DateTime @default(now())

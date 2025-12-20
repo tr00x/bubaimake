@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import client from "../api/client";
 import {
     Car,
@@ -9,11 +10,14 @@ import {
     Menu,
     X,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Globe
 } from "lucide-react";
+import { Toaster } from "../components/ui/sonner";
 import "./admin.css";
 
 export default function AdminLayout() {
+    const { i18n, t } = useTranslation();
     const [authorized, setAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,7 +37,7 @@ export default function AdminLayout() {
             .finally(() => setLoading(false));
     }, [location.pathname, navigate]);
 
-    if (loading) return <div className="h-screen flex items-center justify-center text-gray-500 font-sans">Loading...</div>;
+    if (loading) return <div className="h-screen flex items-center justify-center text-gray-500 font-sans">{t('catalog.loading')}</div>;
 
     if (location.pathname === "/admin/login") {
         return <Outlet />;
@@ -47,7 +51,7 @@ export default function AdminLayout() {
         <>
             <div className="admin-sidebar-header">
                 <span className={`admin-brand ${collapsed ? 'collapsed' : ''}`}>
-                    {collapsed ? 'DC' : 'MashynBazar Admin'}
+                    {collapsed ? 'MB' : 'MashynBazar Admin'}
                 </span>
                 <button 
                     className="admin-mobile-toggle md:hidden" 
@@ -62,35 +66,86 @@ export default function AdminLayout() {
                     to="/admin/cars"
                     className={`admin-nav-item ${isActive('/admin/cars') ? 'active' : ''}`}
                     onClick={() => setMobileMenuOpen(false)}
-                    title={collapsed ? "Inventory" : ""}
+                    title={collapsed ? t('admin.sidebar.inventory') : ""}
                 >
                     <Car className="admin-nav-icon" />
-                    <span className={collapsed ? 'hidden' : ''}>Inventory</span>
+                    <span className={collapsed ? 'hidden' : ''}>{t('admin.sidebar.inventory')}</span>
+                </Link>
+                <Link
+                    to="/admin/translations"
+                    className={`admin-nav-item ${isActive('/admin/translations') ? 'active' : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    title={collapsed ? t('admin.sidebar.translations') : ""}
+                >
+                    <Globe className="admin-nav-icon" />
+                    <span className={collapsed ? 'hidden' : ''}>{t('admin.sidebar.translations')}</span>
                 </Link>
                 <Link
                     to="/admin/settings"
                     className={`admin-nav-item ${isActive('/admin/settings') ? 'active' : ''}`}
                     onClick={() => setMobileMenuOpen(false)}
-                    title={collapsed ? "Settings" : ""}
+                    title={collapsed ? t('admin.sidebar.settings') : ""}
                 >
                     <Settings className="admin-nav-icon" />
-                    <span className={collapsed ? 'hidden' : ''}>Settings</span>
+                    <span className={collapsed ? 'hidden' : ''}>{t('admin.sidebar.settings')}</span>
                 </Link>
             </nav>
 
-            <div className="admin-sidebar-footer desktop-only">
-                <button 
-                    className="admin-collapse-toggle"
-                    onClick={() => setCollapsed(!collapsed)}
-                >
-                    {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-                </button>
+            <div className="mt-auto border-t border-gray-200 p-4 flex flex-col gap-4">
+                {/* User Info */}
+                <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0">
+                         <User className="w-4 h-4" />
+                    </div>
+                    {!collapsed && (
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="text-sm font-medium text-gray-900 truncate">{t('admin.sidebar.admin_user')}</span>
+                            <span className="text-xs text-gray-500 truncate">{t('admin.sidebar.super_admin')}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'justify-between'}`}>
+                    {/* Language Toggle */}
+                    <button
+                        onClick={() => i18n.changeLanguage(i18n.language === 'ru' ? 'en' : 'ru')}
+                        className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                        title={i18n.language === 'ru' ? "Switch to English" : "Переключить на Русский"}
+                    >
+                         <span className="font-medium text-sm">{i18n.language.toUpperCase()}</span>
+                    </button>
+
+                    {/* Collapse Toggle */}
+                    <button 
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors md:flex hidden"
+                        onClick={() => setCollapsed(!collapsed)}
+                        title={collapsed ? t('admin.sidebar.expand') : t('admin.sidebar.collapse')}
+                    >
+                        {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                    </button>
+
+                    {/* Logout */}
+                    <button
+                        onClick={() => {
+                            client.post("/auth/logout").then(() => {
+                                setAuthorized(false);
+                                navigate("/admin/login");
+                            });
+                        }}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center"
+                        title={t('admin.sidebar.sign_out')}
+                    >
+                        <LogOut className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
         </>
     );
 
     return (
         <div className="admin-layout">
+            <Toaster />
             <div 
                 className={`admin-overlay ${mobileMenuOpen ? 'open' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
@@ -110,30 +165,6 @@ export default function AdminLayout() {
                             <Menu className="w-6 h-6" />
                         </button>
                         <span className="admin-brand mobile-only">MashynBazar Admin</span>
-                    </div>
-
-                    <div className="admin-header-right">
-                        <div className="admin-user-profile">
-                            <div className="admin-user-avatar">
-                                <User className="w-4 h-4" />
-                            </div>
-                            <div className="admin-user-info desktop-only">
-                                <span className="admin-user-name">Admin User</span>
-                                <span className="admin-user-role">Super Admin</span>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => {
-                                client.post("/auth/logout").then(() => {
-                                    setAuthorized(false);
-                                    navigate("/admin/login");
-                                });
-                            }}
-                            className="admin-logout-btn-icon"
-                            title="Sign Out"
-                        >
-                            <LogOut className="w-5 h-5" />
-                        </button>
                     </div>
                 </header>
 

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Send, Car, User, MessageSquare, Loader2, Phone } from "lucide-react";
 import client from "../api/client";
 import { WhatsAppIcon, TelegramIcon } from "./ui/Icons";
+import { useTranslation } from "react-i18next";
 
 interface ManagerContactModalProps {
   carTitle?: string;
@@ -28,13 +29,23 @@ export default function ManagerContactModal({
   carImage,
   children,
 }: ManagerContactModalProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [contactInfo, setContactInfo] = useState({ whatsapp: '', telegram: '' });
   const [formData, setFormData] = useState({
     name: "",
     contact: "",
     message: "",
   });
+
+  React.useEffect(() => {
+    if (open) {
+      client.get('/contact-info')
+        .then(res => setContactInfo(res.data))
+        .catch(console.error);
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,15 +59,15 @@ export default function ManagerContactModal({
         carPrice,
         carImage,
         link: window.location.href,
-        source: 'Кнопка менеджера (модальное окно)',
+        source: 'Manager Button (Modal)',
       });
 
-      toast.success("Сообщение отправлено! Менеджер свяжется с вами в ближайшее время.");
+      toast.success(t('contact.modal.success'));
       setOpen(false);
       setFormData({ name: "", contact: "", message: "" });
     } catch (error) {
       console.error(error);
-      toast.error("Ошибка при отправке сообщения. Пожалуйста, попробуйте позже.");
+      toast.error(t('contact.modal.error'));
     } finally {
       setLoading(false);
     }
@@ -64,19 +75,55 @@ export default function ManagerContactModal({
 
   const getMessageText = () => {
     if (carTitle) {
-      return `Здравствуйте! Меня интересует автомобиль ${carTitle} (${carPrice}). Ссылка: ${window.location.href}`;
+      return t('contact.modal.whatsapp_message', { title: carTitle, price: carPrice, url: window.location.href });
     }
-    return "Здравствуйте! Меня интересует консультация по подбору автомобиля.";
+    return t('contact.modal.whatsapp_message_general');
   };
 
   const handleWhatsAppClick = () => {
     const text = encodeURIComponent(getMessageText());
-    window.open(`https://wa.me/1234567890?text=${text}`, '_blank');
+    const waValue = contactInfo.whatsapp || '1234567890';
+    let url = '';
+    
+    // Normalize input: remove spaces, dashes, parentheses, plus signs
+    // Also remove 'wa.me/', 'https://', etc if user pasted a full link
+    let cleanNumber = waValue.replace(/\s+|-|\(|\)|\+/g, '');
+    
+    // If it contains wa.me, strip everything before it and the slash
+    if (cleanNumber.includes('wa.me')) {
+        cleanNumber = cleanNumber.split('wa.me/')[1] || cleanNumber;
+    }
+    // Remove http/https if still present (though unlikely after wa.me check)
+    cleanNumber = cleanNumber.replace(/^https?:\/\//, '');
+    
+    // Remove any non-digits that might still remain (like query params if they pasted a full url with params)
+    // But we want to be careful if they pasted a link with text... 
+    // The user instruction says "just number", so let's enforce digits only for the cleanest result.
+    cleanNumber = cleanNumber.replace(/[^\d]/g, '');
+
+    url = `https://wa.me/${cleanNumber}?text=${text}`;
+    window.open(url, '_blank');
   };
 
   const handleTelegramClick = () => {
     const text = encodeURIComponent(getMessageText());
-    window.open(`https://t.me/tr00x?text=${text}`, '_blank');
+    const tgValue = contactInfo.telegram || 'tr00x';
+    let url = '';
+
+    // Normalize input
+    let username = tgValue.trim();
+    
+    // Remove https://t.me/ or t.me/
+    username = username.replace(/^(https?:\/\/)?(t\.me\/)/, '');
+    
+    // Remove @ if present
+    username = username.replace(/^@/, '');
+    
+    // Remove any trailing slashes or query params if user pasted full URL
+    username = username.split('?')[0].replace(/\/$/, '');
+
+    url = `https://t.me/${username}?text=${text}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -86,9 +133,9 @@ export default function ManagerContactModal({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[400px] p-5 gap-0 overflow-hidden">
         <DialogHeader className="text-center space-y-1 pb-4">
-          <DialogTitle className="text-xl font-bold">Связаться с менеджером</DialogTitle>
+          <DialogTitle className="text-xl font-bold">{t('contact.modal.title')}</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Выберите удобный способ связи
+            {t('contact.modal.subtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -126,7 +173,7 @@ export default function ManagerContactModal({
             </div>
             <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-bold">
               <span className="bg-background px-3 text-muted-foreground">
-                или заполните форму
+                {t('contact.modal.or_form')}
               </span>
             </div>
           </div>
@@ -146,7 +193,7 @@ export default function ManagerContactModal({
                 <Car className="w-5 h-5 text-foreground" />
               </div>
               <div className="flex flex-col z-10 min-w-0">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">Интересует автомобиль</span>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{t('contact.modal.interested_in')}</span>
                 <span className="text-sm font-bold text-foreground leading-tight truncate">{carTitle}</span>
               </div>
             </div>
@@ -158,7 +205,7 @@ export default function ManagerContactModal({
                 <User className="w-4 h-4 text-muted-foreground" />
                 <input
                   id="name"
-                  placeholder="Как к вам обращаться?"
+                  placeholder={t('contact.modal.name_placeholder')}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -172,7 +219,7 @@ export default function ManagerContactModal({
                 <Phone className="w-4 h-4 text-muted-foreground" />
                 <input
                   id="contact"
-                  placeholder="Телефон или Telegram"
+                  placeholder={t('contact.modal.contact_placeholder')}
                   value={formData.contact}
                   onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
                   required
@@ -186,7 +233,7 @@ export default function ManagerContactModal({
                 <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5" />
                 <textarea
                   id="message"
-                  placeholder="Ваш вопрос или комментарий..."
+                  placeholder={t('contact.modal.message_placeholder')}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground min-h-[60px] resize-none"
@@ -205,7 +252,7 @@ export default function ManagerContactModal({
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <span>Отправить заявку</span>
+                <span>{t('contact.modal.submit')}</span>
                 <Send className="w-3.5 h-3.5" />
               </>
             )}

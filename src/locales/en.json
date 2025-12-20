@@ -1,0 +1,404 @@
+{
+  "admin": {
+    "edit_vehicle": "Edit Vehicle",
+    "new_vehicle": "New Vehicle",
+    "edit_vehicle_desc": "Update vehicle details and media.",
+    "new_vehicle_desc": "Add a new vehicle to your inventory.",
+    "cancel": "Cancel",
+    "save_changes": "Save Changes",
+    "create_vehicle": "Create Vehicle",
+    "basic_info": "Basic Information",
+    "basic_info_desc": "Essential details about the vehicle.",
+    "vehicle_title_ru": "Vehicle Title (RU)",
+    "vehicle_title_en": "Vehicle Title (EN)",
+    "price_usd": "Price (USD)",
+    "status": "Status",
+    "select_status": "Select status",
+    "status_active": "Active",
+    "status_sold": "Sold",
+    "status_hidden": "Hidden",
+    "specifications": "Specifications",
+    "specifications_desc": "Technical details and features.",
+    "year": "Year",
+    "mileage": "Mileage (km)",
+    "horsepower": "Horsepower",
+    "top_speed": "Top Speed (km/h)",
+    "transmission_ru": "Transmission (RU)",
+    "fuel_type_ru": "Fuel Type (RU)",
+    "condition_ru": "Condition (RU)",
+    "transmission_en": "Transmission (EN)",
+    "fuel_type_en": "Fuel Type (EN)",
+    "condition_en": "Condition (EN)",
+    "system_classification": "System Classification (Filters)",
+    "transmission": "Transmission",
+    "fuel_type": "Fuel Type",
+    "condition": "Condition",
+    "detailed_description": "Detailed Description",
+    "detailed_description_desc": "Provide a comprehensive description of the vehicle.",
+    "description_placeholder_ru": "Description in Russian...",
+    "description_placeholder_en": "Description in English...",
+    "media_gallery": "Media Gallery",
+    "media_gallery_desc": "Upload photos and manage video links.",
+    "youtube_url": "YouTube Video URL",
+    "images": "Images",
+    "upload": "Upload",
+    "add_photos": "Add Photos",
+    "custom_value": "Custom Value",
+    "custom_translations": "Translations",
+    "tags": "Tags",
+    "tags_placeholder": "Type tag and press Enter...",
+    "save_success": "Vehicle saved successfully",
+    "save_error": "Failed to save vehicle",
+    "upload_success": "Images uploaded successfully",
+    "upload_error": "Upload failed",
+    "fetch_error": "Failed to fetch vehicle",
+    "delete_confirm": "Are you sure you want to delete this vehicle?",
+    "delete_success": "Vehicle deleted successfully",
+    "delete_error": "Failed to delete vehicle",
+    "inventory": "Inventory",
+    "inventory_desc": "Manage your vehicle listings.",
+    "add_vehicle": "Add Vehicle",
+    "search_placeholder": "Search by make, model...",
+    "image": "Image",
+    "vehicle_details": "Vehicle Details",
+    "price": "Price",
+    "no_image": "No Img",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "settings": {
+      "title": "Settings",
+      "desc": "Manage integrations and access",
+      "access_title": "Admin Access",
+      "access_subtitle": "Manage your admin login credentials.",
+      "username": "Username",
+      "password": "Password",
+      "password_placeholder": "Enter new password",
+      "telegram_title": "Telegram Bot",
+      "telegram_subtitle": "Configure bot connection for receiving inquiries.",
+      "manager_contacts_title": "Manager Contacts",
+      "manager_contacts_subtitle": "Links for WhatsApp and Telegram buttons in the modal.",
+      "whatsapp_link": "WhatsApp Number",
+      "telegram_link": "Telegram Username",
+      "whatsapp_placeholder": "971501234567",
+      "telegram_placeholder": "username",
+      "whatsapp_instruction": "Enter phone number only (no spaces or +). System adds wa.me/",
+      "telegram_instruction": "Enter username only (no @ or t.me/). System adds t.me/",
+      "bot_token": "Bot Token",
+      "get_token": "Get token from",
+      "recipients_title": "Recipients",
+      "recipients_subtitle": "List of Telegram IDs to receive notifications.",
+      "enter_chat_id": "Enter Telegram Chat ID",
+      "add": "Add",
+      "active_recipients": "Active Recipients",
+      "no_recipients": "No recipients added",
+      "how_to_get_id": "To get your ID, message",
+      "start_bot_reminder": "After adding ID, don't forget to press /start in your bot's chat.",
+      "save_changes": "Save Changes",
+      "saving": "Saving...",
+      "saved_success": "Settings saved successfully",
+      "save_error": "Error saving settings",
+      "load_error": "Failed to load settings",
+      "id_exists": "ID already added",
+      "copied": "Copied!"
+    },
+    "sidebar": {
+      "inventory": "Inventory",
+      "translations": "Translations",
+      "settings": "Settings",
+      "sign_out": "Sign Out",
+      "admin_user": "Administrator",
+      "super_admin": "Super Admin",
+      "expand": "Expand",
+      "collapse": "Collapse"
+    },
+    "translation_editor": {
+      "title": "Translation Editor",
+      "subtitle": "Manage content for all languages easily",
+      "items": "items",
+      "unsaved_changes": "Unsaved changes",
+      "discard_confirm": "You have unsaved changes. Discard them?",
+      "saving": "Saving...",
+      "save_changes": "Save Changes",
+      "language": "Language",
+      "russian": "Russian",
+      "english": "English",
+      "search_title": "Search",
+      "search_placeholder": "Find key or value...",
+      "pro_tip": "Pro Tip",
+      "pro_tip_desc": "Changes are applied immediately on the website after saving.",
+      "ru_translations": "🇷🇺 Russian Translations",
+      "en_translations": "🇬🇧 English Translations",
+      "sections": "sections",
+      "loading": "Loading translations...",
+      "no_translations": "No translations found.",
+      "load_error": "Failed to load translations",
+      "save_success": "Translations saved successfully",
+      "save_error": "Failed to save translations"
+    },
+    "login": {
+      "title": "Admin Panel",
+      "subtitle": "Login to manage content",
+      "username": "Username",
+      "password": "Password",
+      "submit": "Login",
+      "loading": "Logging in...",
+      "success": "Login successful",
+      "error": "Invalid credentials"
+    }
+  },
+  "header": {
+    "youtube": "YouTube",
+    "catalog": "Catalog",
+    "services": "Services",
+    "contacts": "Contacts",
+    "search_placeholder": "Search...",
+    "menu": "Home",
+    "working_hours": "Mon-Sat: 9:00 - 19:00",
+    "sunday_off": "Sun: Closed"
+  },
+  "hero": {
+    "title_line1": "Find your",
+    "title_line2": "perfect",
+    "title_line3": "car.",
+    "subtitle": "A wide selection of new and used premium cars with quality guarantee and transparent history.",
+    "catalog_button": "View Catalog",
+    "contact_button": "Contact Us"
+  },
+  "car_card": {
+    "power": "Power",
+    "acceleration": "0-100 km/h",
+    "speed": "Top Speed"
+  },
+  "car_page": {
+    "fuel_type": "Fuel Type",
+    "year": "Year",
+    "condition": "Condition",
+    "price": "Price",
+    "more_photos": "More Photos",
+    "description": "Description",
+    "consultation": "Consultation",
+    "consultation_desc": "We calculate delivery and customs clearance, select the best offer",
+    "personal_manager": "Personal Manager",
+    "transparent_terms": "Transparent Terms",
+    "docs_insurance": "Documents & Insurance",
+    "contact_manager": "Contact Manager",
+    "similar_cars": "Similar Cars",
+    "specs": "Specifications"
+  },
+  "catalog": {
+    "title": "Car Catalog",
+    "showroom": "Showroom",
+    "hp": "hp",
+    "sec": "sec",
+    "kmh": "km/h",
+    "loading": "Loading...",
+    "no_cars": "Car not found",
+    "no_results": "No results found for \"{{query}}\"",
+    "go_to_catalog": "Go to Catalog",
+    "all_brands": "All Brands",
+    "clear_filters": "Clear Filters"
+  },
+  "features": {
+    "subtitle": "Why Us",
+    "title": "Advantages of working with us",
+    "card1": {
+      "title": "24/7 Support",
+      "desc": "Personal manager available at every stage of the deal"
+    },
+    "card2": {
+      "title": "Full Document Package",
+      "desc": "Processing of invoices, customs declarations and certificates"
+    },
+    "card3": {
+      "title": "Deadline Compliance",
+      "desc": "Clear SLA and work plan fixed in the contract"
+    },
+    "card4": {
+      "title": "Global Logistics",
+      "desc": "Established delivery routes by road, air and sea"
+    }
+  },
+  "services": {
+    "section_title": "Company Services",
+    "section_subtitle": "We offer a full range of services for comfortable car purchase and operation in the UAE and beyond.",
+    "show_all": "Show all services",
+    "collapse": "Collapse",
+    "directions": "Directions",
+    "items": {
+      "sales": {
+        "title": "Car Sales",
+        "description": "New and used cars, transparent conditions. Huge selection in stock and on order.",
+        "features": [
+          "Wide selection of brands",
+          "Verified legal purity",
+          "Assistance with registration"
+        ]
+      },
+      "search": {
+        "title": "Car Selection",
+        "description": "We find the right configuration and perfect condition for your budget.",
+        "features": [
+          "Deep market analytics",
+          "Technical inspection",
+          "Negotiations"
+        ]
+      },
+      "parts": {
+        "title": "Spare Parts Selection",
+        "description": "Original and high-quality analogues with fast delivery.",
+        "features": [
+          "Selection by VIN code",
+          "Warranty on parts",
+          "Express delivery"
+        ]
+      },
+      "accessories": {
+        "title": "Car Accessories",
+        "description": "Everything for comfort and styling of your car.",
+        "features": [
+          "Premium brands",
+          "Professional installation",
+          "Warranty support"
+        ]
+      },
+      "repair": {
+        "title": "Service and Repair",
+        "description": "Diagnostics, locksmith work, electrics and body repair of any complexity.",
+        "features": [
+          "Original consumables",
+          "Qualified mechanics",
+          "Warranty on work"
+        ]
+      },
+      "tuning": {
+        "title": "Tuning Studio",
+        "description": "Technical improvements and appearance changes for your tasks.",
+        "features": [
+          "Chip tuning (Stage 1-3)",
+          "Aerodynamic kits",
+          "Interior reupholstery"
+        ]
+      },
+      "registration": {
+        "title": "Registration in UAE",
+        "description": "Registration, insurance and deregistration for export.",
+        "features": [
+          "Official registration",
+          "Accelerated procedure",
+          "Assistance with license plates"
+        ]
+      },
+      "logistics": {
+        "title": "Logistics and Export",
+        "description": "Delivery of cars to anywhere in the world turnkey.",
+        "features": [
+          "Air, sea and car carriers",
+          "Customs clearance",
+          "Cargo insurance"
+        ]
+      },
+      "container": {
+        "title": "Container Loading",
+        "description": "Professional loading and fastening of cars for safe transportation.",
+        "features": [
+          "Special fasteners and crating",
+          "Loading photo report",
+          "Space optimization"
+        ]
+      }
+    }
+  },
+  "footer": {
+    "description": "Your reliable partner in the world of cars from UAE. Sales, selection, logistics and service.",
+    "company": "Company",
+    "about": "About Us",
+    "contacts": "Contacts",
+    "vacancies": "Careers",
+    "services": "Services",
+    "catalog_link": "Car Catalog",
+    "logistics": "Logistics",
+    "customs": "Customs",
+    "copyright": "© {{year}} Mashyn Bazar. All rights reserved."
+  },
+  "contact": {
+    "title": "Our Contacts",
+    "subtitle": "We are always in touch and ready to answer any of your questions. Choose a convenient way to contact us.",
+    "label": "Contact",
+    "phone_label": "Phones",
+    "email_label": "Email",
+    "office_label": "Office",
+    "hours_label": "Working Hours",
+    "office_address": "Al Quoz Industrial Area 3",
+    "office_city": "Dubai, UAE",
+    "office_phone": "Office: +971 4 331 8397",
+    "cooperation": "For cooperation inquiries",
+    "form": {
+      "title": "Leave a Request",
+      "subtitle": "Fill out the form and our manager will contact you within 15 minutes.",
+      "name": "Your Name",
+      "phone": "Phone Number",
+      "email": "Email (optional)",
+      "message": "Message",
+      "submit": "Submit Request",
+      "sending": "Sending...",
+      "success": "Message sent! We will contact you shortly.",
+      "error": "Error sending message. Please try again later.",
+      "agreement": "By clicking the button, you agree to the personal data processing policy"
+    },
+    "modal": {
+      "title": "Contact Manager",
+      "subtitle": "Choose a convenient way to contact",
+      "or_form": "or fill out the form",
+      "interested_in": "Interested in car",
+      "name_placeholder": "How should we address you?",
+      "contact_placeholder": "Phone or Telegram",
+      "message_placeholder": "Your question or comment...",
+      "submit": "Submit Request",
+      "success": "Message sent! Manager will contact you shortly.",
+      "error": "Error sending message. Please try again later.",
+      "whatsapp_message": "Hello! I am interested in the car {{title}} ({{price}}). Link: {{url}}",
+      "whatsapp_message_general": "Hello! I am interested in car selection consultation."
+    }
+  },
+  "youtube": {
+    "title": "Reviews, test drives and life of the UAE car market.",
+    "subtitle": "Subscribe to be the first to know about new products, prices and exclusive offers.",
+    "channel_label": "YouTube Channel",
+    "subscribe": "Subscribe",
+    "fallback_title": "Latest Mashyn Bazar Videos"
+  },
+  "blog": {
+    "subtitle": "News and Articles",
+    "title": "Blog",
+    "read_more": "Read",
+    "posts": {
+      "1": {
+        "title": "How to buy a car in UAE: step by step",
+        "date": "Dec 12, 2025"
+      },
+      "2": {
+        "title": "Customs clearance: what is important to know",
+        "date": "Dec 5, 2025"
+      },
+      "3": {
+        "title": "Logistics from Dubai: terms and prices",
+        "date": "Nov 28, 2025"
+      },
+      "4": {
+        "title": "Choosing a sports car: tips",
+        "date": "Nov 15, 2025"
+      }
+    }
+  },
+  "filter_auto": "Automatic",
+  "filter_manual": "Manual",
+  "filter_robot": "Robot",
+  "filter_petrol": "Petrol",
+  "filter_diesel": "Diesel",
+  "filter_electric": "Electric",
+  "filter_hybrid": "Hybrid",
+  "filter_used": "Used",
+  "filter_new": "New",
+  "filter_custom": "Other"
+}

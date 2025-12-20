@@ -15,7 +15,7 @@ export default function App() {
     // Fake loading time to smooth out initial render and hide layout shifts
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1800); 
+    }, 1000); 
 
     return () => clearTimeout(timer);
   }, []);

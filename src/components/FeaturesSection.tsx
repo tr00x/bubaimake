@@ -1,6 +1,7 @@
 import React from "react";
 import { CheckCircle2, FileText, Clock, Globe } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -14,7 +15,7 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
       className="bg-card rounded-2xl p-6 md:p-7 flex flex-col gap-4 border border-border hover:border-ring/50 transition-colors flex-1 min-w-[280px] group"
       variants={{
         hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+        visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
       }}
     >
        <div className="w-14 h-14 rounded-xl bg-background flex items-center justify-center border border-border text-foreground">
@@ -29,6 +30,8 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
 }
 
 export default function FeaturesSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="bg-secondary/20 border-y border-border">
         <div className="container mx-auto px-4 md:px-10 py-20 flex flex-col gap-12 items-center">
@@ -37,10 +40,10 @@ export default function FeaturesSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.3 }}
           >
-             <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">Почему мы</span>
-             <h2 className="text-3xl font-medium text-foreground">Преимущества работы с нами</h2>
+             <span className="uppercase tracking-widest text-muted-foreground text-xs font-semibold">{t('features.subtitle')}</span>
+             <h2 className="text-3xl font-medium text-foreground">{t('features.title')}</h2>
           </motion.div>
           
           <motion.div 
@@ -54,23 +57,23 @@ export default function FeaturesSection() {
           >
              <FeatureCard 
                icon={<CheckCircle2 className="w-10 h-10 text-primary" />}
-               title="Сопровождение 24/7"
-               description="Личный менеджер на связи на каждом этапе сделки"
+               title={t('features.card1.title')}
+               description={t('features.card1.desc')}
              />
              <FeatureCard 
                icon={<FileText className="w-10 h-10 text-primary" />}
-               title="Полный пакет документов"
-               description="Оформление инвойсов, таможенных деклараций и сертификатов"
+               title={t('features.card2.title')}
+               description={t('features.card2.desc')}
              />
              <FeatureCard 
                icon={<Clock className="w-10 h-10 text-primary" />}
-               title="Соблюдение сроков"
-               description="Четкие SLA и план работ, зафиксированные в договоре"
+               title={t('features.card3.title')}
+               description={t('features.card3.desc')}
              />
              <FeatureCard 
                icon={<Globe className="w-10 h-10 text-primary" />}
-               title="Глобальная логистика"
-               description="Отлаженные маршруты доставки авто, авиа и морским транспортом"
+               title={t('features.card4.title')}
+               description={t('features.card4.desc')}
              />
           </motion.div>
         </div>
