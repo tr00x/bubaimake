@@ -8,17 +8,23 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    // Only show preloader if it hasn't been shown in this session
+    return !sessionStorage.getItem('hasSeenPreloader');
+  });
   const location = useLocation();
 
   useEffect(() => {
-    // Fake loading time to smooth out initial render and hide layout shifts
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000); 
+    if (isLoading) {
+      // Fake loading time to smooth out initial render and hide layout shifts
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        sessionStorage.setItem('hasSeenPreloader', 'true');
+      }, 1000); 
 
-    return () => clearTimeout(timer);
-  }, []);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   return (
     <div className="bg-background min-h-screen font-sans text-foreground antialiased selection:bg-destructive selection:text-white flex flex-col">

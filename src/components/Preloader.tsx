@@ -11,7 +11,7 @@ export default function Preloader({ isLoading }: PreloaderProps) {
     <AnimatePresence>
       {isLoading && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background h-[100dvh] w-screen touch-none overscroll-none"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
