@@ -1,63 +1,134 @@
+# Mashyn Bazar - Premium Auto Showroom
 
-# Mashyn Bazar - Luxury Dynamic Showroom
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-purple?logo=vite)](https://vitejs.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-4-cyan?logo=tailwindcss)](https://tailwindcss.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5-black?logo=prisma)](https://www.prisma.io/)
+[![Express](https://img.shields.io/badge/Express-5-green?logo=express)](https://expressjs.com/)
 
-A React-based luxury car showroom application with a dynamic backend powered by Express, Prisma, and SQLite.
+Современное веб-приложение (PWA) для автосалона премиум-класса, специализирующегося на импорте автомобилей из ОАЭ. Проект включает в себя публичный каталог с высокой производительностью и полнофункциональную панель администратора.
 
-## Features
+![Preview](public/images/cars/lambo_revuelto_ext_1765922634479.png)
 
-- **Dynamic Catalog**: Cars are fetched from the database.
-- **Admin Panel**: Backend API supports CRUD operations (Frontend pending).
-- **Authentication**: Simple password-based admin access.
-- **Image Storage**: Local file system storage for car images.
+## 🚀 Основные возможности
 
-## Setup & Installation
+### 🎨 Frontend (Клиентская часть)
+*   **PWA (Progressive Web App)**: Работает оффлайн, устанавливается как приложение, агрессивное кэширование изображений и шрифтов.
+*   **Производительность**: Оптимизированная загрузка ассетов, умный прелоадер (показывается 1 раз за сессию), HTTP-кэширование на год.
+*   **Анимации**: Плавные переходы с использованием **Framer Motion**.
+*   **Локализация**: Полная поддержка **RU/EN** (интерфейс + контент базы данных) через `i18next`.
+*   **UI Компоненты**: Построено на базе **Radix UI** и **Tailwind CSS**.
 
-1.  **Install Dependencies**
-    ```bash
-    npm install
-    ```
+### 🛠 Backend & Admin (Серверная часть)
+*   **Admin Panel**:
+    *   CRUD управление автомобилями (создание, редактирование, удаление).
+    *   Загрузка и сортировка изображений (Drag & Drop).
+    *   Редактор переводов (управление `ru.json` / `en.json` прямо из админки).
+    *   Настройка контактов менеджеров и интеграций без перезагрузки сервера.
+*   **Telegram Bot**: Мгновенные уведомления о новых заявках с сайта в Telegram-чат.
+*   **Безопасность**: Cookie-based аутентификация администратора.
+*   **База данных**: SQLite + Prisma ORM (легко масштабируется до PostgreSQL).
 
-2.  **Environment Setup**
-    Ensure `.env` exists with the following:
-    ```
-    DATABASE_URL="file:./dev.db"
-    ADMIN_PASSWORD="admin_password_123"
-    ```
+## 🛠 Технологический стек
 
-3.  **Database Setup**
-    Initialize the database and run migrations:
-    ```bash
-    npx prisma migrate dev
-    ```
-    *(Optional)* Seed the database with demo data:
-    ```bash
-    npx tsx prisma/seed.ts
-    ```
+*   **Frontend**: React, Vite, TypeScript, TailwindCSS, Framer Motion, React Router v6, Sonner (тосты), Lucide React (иконки).
+*   **Backend**: Node.js, Express, Multer (загрузка файлов), Telegraf (Telegram API).
+*   **Database**: SQLite, Prisma ORM.
+*   **DevOps**: Cloudflare Tunnel (для демо), VitePWA.
 
-## Running the Application
+## 📦 Установка и запуск
 
-You need to run both the backend API and the frontend development server.
+### Предварительные требования
+*   Node.js v18+
+*   npm или pnpm
 
-1.  **Start Backend API**
-    ```bash
-    npm run server
-    ```
-    Server runs on `http://localhost:3001`.
+### 1. Клонирование и установка зависимостей
+```bash
+git clone https://github.com/tr00x/bubaimake.git
+cd bubaimake
+npm install
+```
 
-2.  **Start Frontend**
-    ```bash
-    npm run dev
-    ```
-    Frontend runs on `http://localhost:3000` (proxies `/api` to backend).
+### 2. Настройка окружения (.env)
+Создайте файл `.env` в корне проекта (или отредактируйте существующий):
 
-## API Endpoints
+```env
+# База данных
+DATABASE_URL="file:./dev.db"
 
-- `GET /api/cars` - List all active cars
-- `GET /api/cars/:id` - Get car details
-- `POST /api/auth/login` - Admin login
-- `POST /api/cars` - Create car (Admin only)
-- `POST /api/upload/images` - Upload images (Admin only)
+# Доступ к админке
+ADMIN_USERNAME="admin"
+ADMIN_PASSWORD="your_secure_password"
+ADMIN_SESSION_TOKEN="secret_token_string"
 
-## Admin Access
+# Telegram Интеграция (для заявок)
+TELEGRAM_BOT_TOKEN="your_bot_token"
+TELEGRAM_CHAT_ID="your_chat_id"
 
-Use the password defined in `.env` (`admin_password_123`) to authenticate against admin endpoints.
+# Контакты менеджера (можно менять из админки)
+MANAGER_WHATSAPP="971501234567"
+MANAGER_TELEGRAM="username"
+```
+
+### 3. Инициализация базы данных
+```bash
+# Применение миграций
+npx prisma migrate dev --name init
+
+# (Опционально) Заполнение тестовыми данными
+npx tsx prisma/seed.ts
+```
+
+### 4. Запуск проекта
+Для разработки нужно запустить **два** терминала:
+
+**Терминал 1 (Backend):**
+```bash
+npm run server
+```
+*Сервер запустится на порту 3001*
+
+**Терминал 2 (Frontend):**
+```bash
+npm run dev
+```
+*Сайт будет доступен по адресу http://localhost:3000*
+
+## 📱 PWA и Кэширование
+Проект настроен как Progressive Web App.
+*   **Service Worker**: Кэширует JS/CSS/HTML для оффлайн доступа.
+*   **Image Cache**: Фотографии автомобилей кэшируются на устройстве пользователя (стратегия CacheFirst).
+*   **Server Cache**: Express отдает статику с заголовком `Cache-Control: max-age=1y`.
+
+## 🛡 Панель администратора
+Доступна по адресу `/admin/login`.
+*   **Логин/Пароль**: Указываются в `.env` (по умолчанию `admin` / `password` в dev режиме).
+*   **Функции**:
+    *   Добавление авто: фото, характеристики, описание (Markdown).
+    *   Настройки: Смена пароля, токена бота, контактов WhatsApp/Telegram.
+    *   Переводы: Редактирование всех текстов на сайте.
+
+## 📂 Структура проекта
+
+```
+bubaimake/
+├── prisma/              # Схема БД и сиды
+├── public/              # Статические файлы (favicon, robots.txt)
+├── server/              # Backend на Express
+│   ├── uploads/         # Загруженные фото авто
+│   └── index.ts         # Точка входа сервера
+├── src/
+│   ├── admin/           # Компоненты админ-панели
+│   ├── components/      # UI компоненты сайта
+│   ├── locales/         # JSON файлы переводов (ru/en)
+│   ├── pages/           # Страницы публичной части
+│   ├── styles/          # Глобальные стили
+│   ├── App.tsx          # Корневой компонент + Прелоадер
+│   └── main.tsx         # Точка входа React + PWA
+├── vite.config.ts       # Конфиг Vite + PWA
+└── package.json         # Зависимости и скрипты
+```
+
+---
+Developed by [MashynBazar Team]
