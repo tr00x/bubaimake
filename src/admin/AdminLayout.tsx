@@ -109,11 +109,11 @@ export default function AdminLayout() {
                 <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'justify-between'}`}>
                     {/* Language Toggle */}
                     <button
-                        onClick={() => i18n.changeLanguage(i18n.language === 'ru' ? 'en' : 'ru')}
+                        onClick={() => i18n.changeLanguage(i18n.language.startsWith('ru') ? 'en' : 'ru')}
                         className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
-                        title={i18n.language === 'ru' ? "Switch to English" : "Переключить на Русский"}
+                        title={i18n.language.startsWith('ru') ? "Switch to English" : "Переключить на Русский"}
                     >
-                         <span className="font-medium text-sm">{i18n.language.toUpperCase()}</span>
+                         <span className="font-medium text-sm">{i18n.language.startsWith('ru') ? 'RU' : 'EN'}</span>
                     </button>
 
                     {/* Collapse Toggle */}

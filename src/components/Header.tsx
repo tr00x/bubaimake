@@ -14,7 +14,7 @@ export default function Header() {
   const location = useLocation();
 
   const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'ru' ? 'en' : 'ru');
+    i18n.changeLanguage(i18n.language.startsWith('ru') ? 'en' : 'ru');
   };
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function Header() {
             onClick={toggleLanguage}
             className="w-10 h-10 rounded-xl hover:bg-secondary font-medium"
           >
-            {i18n.language.toUpperCase()}
+            {i18n.language.startsWith('ru') ? 'RU' : 'EN'}
           </Button>
 
           {/* Search */}

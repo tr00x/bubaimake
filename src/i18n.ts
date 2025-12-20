@@ -18,7 +18,7 @@ i18n
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'cookie', 'navigator'],
+      order: ['localStorage', 'cookie'],
       caches: ['localStorage', 'cookie'],
     },
   });
