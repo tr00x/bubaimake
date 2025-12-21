@@ -5,10 +5,10 @@ import path from 'path';
 import multer from 'multer';
 import { PrismaClient } from '@prisma/client';
 import cookieParser from 'cookie-parser';
-import axios from 'axios';
 import 'dotenv/config';
 import { Telegraf } from 'telegraf';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const app = express();
 const prisma = new PrismaClient({
@@ -44,18 +44,41 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// --- Auth Helper ---
+const getSecret = () => process.env.JWT_SECRET || 'default-secret-key-change-this';
+
+const createToken = (payload: any) => {
+    const data = Buffer.from(JSON.stringify(payload)).toString('base64');
+    const signature = crypto.createHmac('sha256', getSecret()).update(data).digest('hex');
+    return `${data}.${signature}`;
+};
+
+const verifyToken = (token: string) => {
+    try {
+        const [data, signature] = token.split('.');
+        if (!data || !signature) return null;
+
+        const expectedSignature = crypto.createHmac('sha256', getSecret()).update(data).digest('hex');
+        if (signature !== expectedSignature) return null;
+
+        return JSON.parse(Buffer.from(data, 'base64').toString());
+    } catch (e) {
+        return null;
+    }
+};
+
 // --- Auth Middleware ---
 const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    // Simple cookie-based auth
     const token = req.cookies.admin_token;
-    // Ideally, use a proper session/JWT. For MVP with single password, this is minimal.
-    // We'll set a simple random token on login and check existence, or just check a signed cookie.
-    // Given requirements: "Simple secure cookie session (recommended) or JWT"
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-    if (token && token === process.env.ADMIN_SESSION_TOKEN) {
+    const payload = verifyToken(token);
+    if (payload && payload.role === 'admin' && payload.exp > Date.now()) {
         next();
     } else {
-        // Also allow if header Authorization is present (for easier testing if needed, but cookie is preferred)
         res.status(401).json({ error: 'Unauthorized' });
     }
 };
@@ -167,23 +190,12 @@ app.post('/api/auth/login', (req, res) => {
     const validPassword = process.env.ADMIN_PASSWORD;
 
     if (username === validUsername && password === validPassword) {
-        const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        // Store in memory or DB? For single user MVP, verify against env or generated token if we persist it.
-        // Better: just verify password and set a simpler "authorized" cookie if specific token management isn't needed. 
-        // But to be slightly more secure/stateless-ish without DB sessions:
-        // We can use a shared secret in env to sign a JWT.
+        const token = createToken({
+            role: 'admin',
+            exp: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+        });
 
-        // Simpler for this MVP:
-        // Just Use a hardcoded session token for now or a simple expected value.
-        // Let's use a simple strategy:
-        // Check if password matches env. If so, set a cookie.
-
-        // We need to persist the token to Verify it middleware?
-        // Let's Just use a JWT approach for simplicity without session storage.
-        // Assuming simple requirement. I'll mock a session token.
-        process.env.ADMIN_SESSION_TOKEN = 'valid-session-' + Date.now();
-
-        res.cookie('admin_token', process.env.ADMIN_SESSION_TOKEN, {
+        res.cookie('admin_token', token, {
             httpOnly: true,
             secure: false, // Localhost
             maxAge: 24 * 60 * 60 * 1000 // 1 day
@@ -195,7 +207,10 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.get('/api/auth/me', (req, res) => {
-    if (req.cookies.admin_token && req.cookies.admin_token === process.env.ADMIN_SESSION_TOKEN) {
+    const token = req.cookies.admin_token;
+    const payload = verifyToken(token || '');
+    
+    if (payload && payload.role === 'admin' && payload.exp > Date.now()) {
         res.json({ user: 'admin' });
     } else {
         res.status(401).json({ error: 'Not logged in' });
