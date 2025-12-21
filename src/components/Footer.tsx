@@ -31,12 +31,12 @@ export default function Footer() {
           </div>
           
           {/* Optional: Header Menu Items */}
-          <nav className="flex flex-wrap gap-x-8 gap-y-4">
+          <nav className="flex flex-col gap-6 md:items-end">
             {navLinks.map((link) => (
                 <Link 
                     key={link.name}
                     to={link.href}
-                    className="text-sm font-medium text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                    className="text-base font-medium text-primary-foreground/60 hover:text-white transition-colors duration-200"
                 >
                     {link.name}
                 </Link>
