@@ -5,6 +5,23 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    allowedHosts: [
+      'masynbazar.com',
+      'www.masynbazar.com',
+      '84.200.87.48',
+      'localhost'
+    ]
+  },
+  preview: {
+    allowedHosts: [
+      'masynbazar.com',
+      'www.masynbazar.com',
+      '84.200.87.48',
+      'localhost'
+    ]
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -129,20 +146,5 @@ export default defineConfig({
   build: {
     target: 'esnext',
     outDir: 'build',
-  },
-  server: {
-    port: 3000,
-    open: true,
-    allowedHosts: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/uploads': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      }
-    }
   },
 });

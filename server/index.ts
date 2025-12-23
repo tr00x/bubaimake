@@ -125,7 +125,8 @@ ${message || 'Без сообщения'}
         
         // Resolve photo source once
         let photoSource: string | { source: string } | undefined;
-        if (carImage && isManagerRequest) {
+        // Always try to process carImage if it exists, regardless of source
+        if (carImage) {
              console.log('Processing carImage:', carImage);
 
              if (carImage.startsWith('/uploads/')) {
@@ -138,12 +139,21 @@ ${message || 'Без сообщения'}
                  }
              } else if (carImage.startsWith('/images/')) {
                  // Public assets folder
+                 // Correctly resolve path to /var/www/masynbazar/public/images/cars/...
+                 // carImage is like "/images/cars/filename.png"
                  const localPath = path.join(__dirname, '..', 'public', carImage);
                  console.log('Trying public path:', localPath);
                  if (fs.existsSync(localPath)) {
                      photoSource = { source: localPath };
                  } else {
                      console.log('Public file not found:', localPath);
+                     
+                     // Fallback: try without leading slash if path join failed unexpectedly
+                     const altPath = path.join(__dirname, '..', 'public', carImage.replace(/^\//, ''));
+                     console.log('Trying alternative public path:', altPath);
+                     if (fs.existsSync(altPath)) {
+                        photoSource = { source: altPath };
+                     }
                  }
              } else if (carImage.startsWith('http')) {
                  photoSource = carImage;
@@ -157,25 +167,31 @@ ${message || 'Без сообщения'}
         }
 
         // Send to all chat IDs
-        const sendPromises = chatIds.map(async (chatId) => {
+        const results = await Promise.allSettled(chatIds.map(async (chatId) => {
+            const trimmedId = chatId.trim();
+            if (!trimmedId) return;
+
             let sent = false;
             if (photoSource) {
                 try {
-                    await bot.telegram.sendPhoto(chatId, photoSource, { caption: text, parse_mode: 'Markdown' });
+                    await bot.telegram.sendPhoto(trimmedId, photoSource, { caption: text, parse_mode: 'Markdown' });
                     sent = true;
                 } catch (err) {
-                    console.error(`Error sending photo to ${chatId}:`, err);
+                    console.error(`Error sending photo to ${trimmedId}:`, err);
                 }
             }
             
             if (!sent) {
-                 await bot.telegram.sendMessage(chatId, text, { parse_mode: 'Markdown' });
+                 await bot.telegram.sendMessage(trimmedId, text, { parse_mode: 'Markdown' });
             }
-        });
+        }));
 
-        await Promise.all(sendPromises);
+        const failures = results.filter(r => r.status === 'rejected');
+        if (failures.length > 0 && failures.length === chatIds.length) {
+            throw new Error('Failed to send to all recipients');
+        }
 
-        res.json({ success: true });
+        res.json({ success: true, partial: failures.length > 0 });
     } catch (error) {
         console.error('Telegram send error:', error);
         res.status(500).json({ error: 'Failed to send message' });
