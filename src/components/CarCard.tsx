@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Route, Disc, Gauge } from "lucide-react";
 import { HorsePowerIcon, SpeedIcon } from "./ui/Icons";
 import { useTranslation } from "react-i18next";
 
@@ -9,12 +9,17 @@ export type CarCardProps = {
   tags?: string[];
   meta?: string[];
   specs: { hp: string; zeroTo100: string };
+  details?: {
+    mileage?: string;
+    engineCapacity?: string;
+    driveType?: string;
+  };
   price: string;
   id: string;
   year?: number;
 };
 
-export function CarCard({ title, image, tags = [], meta = [], specs, price, id, year }: CarCardProps) {
+export function CarCard({ title, image, tags = [], meta = [], specs, details, price, id, year }: CarCardProps) {
   const { t } = useTranslation();
 
   return (
@@ -42,6 +47,8 @@ export function CarCard({ title, image, tags = [], meta = [], specs, price, id, 
       <div className="p-5 flex flex-col gap-4 flex-1">
         <div className="flex flex-col gap-2">
           <h3 className="text-foreground text-xl font-semibold tracking-tight">{title}</h3>
+          
+          {/* Main tags like fuel type and transmission */}
           <div className="flex flex-wrap gap-2">
             {meta.map((text, idx) => (
               <span key={`${text}-${idx}`} className="text-[13px] text-muted-foreground bg-secondary px-2 py-1 rounded-md">
@@ -49,9 +56,35 @@ export function CarCard({ title, image, tags = [], meta = [], specs, price, id, 
               </span>
             ))}
           </div>
+
+          {/* Additional details: Mileage, Engine, Drive type */}
+          {details && (details.mileage || details.engineCapacity || details.driveType) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-muted-foreground/80">
+              {details.mileage && (
+                <div className="flex items-center gap-1">
+                  <Route className="w-3.5 h-3.5" />
+                  <span>{details.mileage}</span>
+                </div>
+              )}
+              {details.engineCapacity && (
+                <div className="flex items-center gap-1">
+                  <Gauge className="w-3.5 h-3.5" />
+                  <span>{details.engineCapacity}</span>
+                </div>
+              )}
+              {details.driveType && (
+                <div className="flex items-center gap-1">
+                  <Disc className="w-3.5 h-3.5" />
+                  <span>{details.driveType}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 py-3 border-t border-b border-dashed border-border">
+        {(specs.hp || specs.zeroTo100) && (
+        <div className="grid grid-cols-2 gap-3 py-3 border-t border-b border-dashed border-border mt-1">
+          {specs.hp ? (
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1 text-muted-foreground">
               <HorsePowerIcon />
@@ -59,6 +92,8 @@ export function CarCard({ title, image, tags = [], meta = [], specs, price, id, 
             </div>
             <span className="text-sm font-medium text-foreground">{specs.hp}</span>
           </div>
+          ) : <div />}
+          {specs.zeroTo100 ? (
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1 text-muted-foreground">
               <SpeedIcon />
@@ -66,7 +101,9 @@ export function CarCard({ title, image, tags = [], meta = [], specs, price, id, 
             </div>
             <span className="text-sm font-medium text-foreground">{specs.zeroTo100}</span>
           </div>
+          ) : <div />}
         </div>
+        )}
 
         <div className="flex items-center justify-between mt-auto pt-1">
           <span className="text-foreground text-xl font-bold tracking-tight">{price}</span>

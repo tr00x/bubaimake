@@ -18,7 +18,7 @@ export const getLocalizedValue = (
   if (valEn && !valRu && currentLang === 'ru') return valEn;
 
   // If no localized custom values, try to translate the system value
-  if (!systemVal) return "";
+  if (!systemVal || systemVal === '_empty') return "";
   
   const lowerSystemVal = systemVal.toLowerCase();
   

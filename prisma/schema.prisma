@@ -29,6 +29,20 @@ model Car {
   condition     String
   condition_ru  String?
   condition_en  String?
+  
+  // New fields for better specs
+  acceleration  Float?   // 0-100 km/h in seconds
+  engineCapacity String? // e.g. "4.4L", "Electric"
+  bodyType      String?  // e.g. "SUV", "Sedan"
+  bodyType_ru   String?
+  bodyType_en   String?
+  driveType     String?  // e.g. "AWD", "RWD"
+  driveType_ru  String?
+  driveType_en  String?
+  color         String?
+  color_ru      String?
+  color_en      String?
+
   descriptionMd String
   description_ru String?
   description_en String?

@@ -143,6 +143,7 @@ export default function AdminCarList() {
                                     : (car.title_ru || car.title);
 
                                 const displayStatus = t(`admin.status_${car.status.toLowerCase()}`, { defaultValue: car.status });
+                                const displayYear = car.year ? String(car.year) : "—";
 
                                 return (
                                     <tr key={car.id}>
@@ -164,7 +165,7 @@ export default function AdminCarList() {
                                         </td>
                                         <td>
                                             <div className="admin-table-title">{displayTitle}</div>
-                                            <div className="admin-table-subtitle">{car.year}</div>
+                                            <div className="admin-table-subtitle">{displayYear}</div>
                                         </td>
                                         <td>
                                             <span className={`admin-status-badge ${car.status === 'active' ? 'status-active' : 'status-sold'}`}>

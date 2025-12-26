@@ -37,7 +37,22 @@ export function LocalizedSelect({
     // If value is "Custom" or some other string not in options, treat as custom.
     
     // We add "Custom" to options for the dropdown
-    const effectiveValue = isCustom ? "Custom" : value;
+    let effectiveValue = isCustom ? "Custom" : value;
+    if (effectiveValue === "" && options.some(o => o.value === "_empty")) {
+        effectiveValue = "_empty";
+    }
+
+    const hasCustomInOptions = options.some((opt) => opt.value === "Custom");
+    const dedupedOptions = (() => {
+        const seen = new Set<string>();
+        const result: { value: string; label: string }[] = [];
+        for (const opt of options) {
+            if (seen.has(opt.value)) continue;
+            seen.add(opt.value);
+            result.push(opt);
+        }
+        return result;
+    })();
 
     const handleSelectChange = (val: string) => {
         if (val === "Custom") {
@@ -64,10 +79,12 @@ export function LocalizedSelect({
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {options.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        {dedupedOptions.map((opt, idx) => (
+                            <SelectItem key={`${opt.value}-${idx}`} value={opt.value}>{opt.label}</SelectItem>
                         ))}
-                        <SelectItem value="Custom">{t('admin.custom_value')}</SelectItem>
+                        {!hasCustomInOptions && (
+                            <SelectItem key="__custom__" value="Custom">{t('admin.custom_value')}</SelectItem>
+                        )}
                     </SelectContent>
                 </Select>
             </div>

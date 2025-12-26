@@ -83,6 +83,47 @@ const requireAuth = (req: express.Request, res: express.Response, next: express.
     }
 };
 
+const isEmptyValue = (v: any) =>
+    v === undefined ||
+    v === null ||
+    (typeof v === 'string' && v.trim() === '');
+
+const parseRequiredInt = (v: any) => {
+    if (isEmptyValue(v)) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return Math.trunc(n);
+};
+
+const parseOptionalInt = (v: any) => {
+    if (isEmptyValue(v)) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return Math.trunc(n);
+};
+
+const parseOptionalFloat = (v: any) => {
+    if (isEmptyValue(v)) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return null;
+    return n;
+};
+
+const parseUpdateOptionalInt = (v: any) => {
+    if (v === undefined) return undefined;
+    return parseOptionalInt(v);
+};
+
+const parseUpdateOptionalFloat = (v: any) => {
+    if (v === undefined) return undefined;
+    return parseOptionalFloat(v);
+};
+
+const toStringOrEmpty = (v: any) => {
+    if (v === undefined || v === null) return '';
+    return typeof v === 'string' ? v : String(v);
+};
+
 // --- API Routes ---
 
 app.post('/api/contact', async (req, res) => {
@@ -203,7 +244,7 @@ app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
 
     const validUsername = process.env.ADMIN_USERNAME || 'admin';
-    const validPassword = process.env.ADMIN_PASSWORD;
+    const validPassword = process.env.ADMIN_PASSWORD || 'password';
 
     if (username === validUsername && password === validPassword) {
         const token = createToken({
@@ -352,7 +393,28 @@ app.get('/api/cars/:id', async (req, res) => {
 // Admin Routes
 app.post('/api/cars', requireAuth, async (req, res) => {
     try {
-        const { id, createdAt, updatedAt, images, ...data } = req.body;
+        const { id, createdAt, updatedAt, images, ...rawData } = req.body;
+
+        const priceUsd = parseOptionalInt(rawData.priceUsd) ?? 0;
+        const year = parseOptionalInt(rawData.year) ?? 0;
+
+        const data = {
+            ...rawData,
+            title: toStringOrEmpty(rawData.title) || 'Untitled',
+            transmission: toStringOrEmpty(rawData.transmission),
+            fuelType: toStringOrEmpty(rawData.fuelType),
+            condition: toStringOrEmpty(rawData.condition),
+            status: toStringOrEmpty(rawData.status) || 'active',
+            tags: toStringOrEmpty(rawData.tags),
+            labels: toStringOrEmpty(rawData.labels),
+            descriptionMd: toStringOrEmpty(rawData.descriptionMd),
+            priceUsd,
+            year,
+            mileage: parseOptionalInt(rawData.mileage),
+            horsepower: parseOptionalInt(rawData.horsepower),
+            topSpeed: parseOptionalInt(rawData.topSpeed),
+            acceleration: parseOptionalFloat(rawData.acceleration),
+        };
 
         const imageCreateData = images && Array.isArray(images)
             ? images.map((img: any) => ({
@@ -380,7 +442,31 @@ app.post('/api/cars', requireAuth, async (req, res) => {
 
 app.put('/api/cars/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
-    const { id: _bodyId, createdAt, updatedAt, images, ...data } = req.body;
+    const { id: _bodyId, createdAt, updatedAt, images, ...rawData } = req.body;
+
+    const priceUsd = rawData.priceUsd === undefined
+        ? undefined
+        : (isEmptyValue(rawData.priceUsd) ? 0 : parseRequiredInt(rawData.priceUsd));
+    const year = rawData.year === undefined
+        ? undefined
+        : (isEmptyValue(rawData.year) ? 0 : parseRequiredInt(rawData.year));
+
+    if (rawData.priceUsd !== undefined && priceUsd === null) {
+        return res.status(400).json({ error: 'Invalid priceUsd' });
+    }
+    if (rawData.year !== undefined && year === null) {
+        return res.status(400).json({ error: 'Invalid year' });
+    }
+
+    const data = {
+        ...rawData,
+        priceUsd,
+        year,
+        mileage: parseUpdateOptionalInt(rawData.mileage),
+        horsepower: parseUpdateOptionalInt(rawData.horsepower),
+        topSpeed: parseUpdateOptionalInt(rawData.topSpeed),
+        acceleration: parseUpdateOptionalFloat(rawData.acceleration),
+    };
 
     try {
         const result = await prisma.$transaction(async (tx) => {

@@ -7,12 +7,23 @@ import path from 'path';
 export default defineConfig({
   server: {
     host: '0.0.0.0',
+    port: 3000,
     allowedHosts: [
       'masynbazar.com',
       'www.masynbazar.com',
       '84.200.87.48',
       'localhost'
-    ]
+    ],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      }
+    }
   },
   preview: {
     allowedHosts: [

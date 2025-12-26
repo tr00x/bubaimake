@@ -19,10 +19,11 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "../components/ui/carousel";
-import { ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck, DollarSign } from "lucide-react";
+import { ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Gauge, Fuel, Calendar, Cog, BadgeCheck, Mail, UserCheck, FileCheck, ShieldCheck, Palette, Timer, Zap, Route, DollarSign, CarFront } from "lucide-react";
 import client from "../api/client";
 import { CarCard } from "../components/CarCard";
 import ManagerContactModal from "../components/ManagerContactModal";
+import { DrivetrainIcon, EngineIcon } from "../components/ui/Icons";
 import { getLocalizedValue } from "../utils/localization";
 
 type CarData = {
@@ -32,12 +33,12 @@ type CarData = {
   title_en?: string;
   priceUsd: number;
   year: number;
-  mileage: number;
+  mileage?: number | null;
   transmission: string;
   transmission_ru?: string;
   transmission_en?: string;
-  horsepower: number;
-  topSpeed: number;
+  horsepower?: number | null;
+  topSpeed?: number | null;
   fuelType: string;
   fuelType_ru?: string;
   fuelType_en?: string;
@@ -54,7 +55,20 @@ type CarData = {
   tags_ru?: string;
   tags_en?: string;
   labels: string; // CSV
-  images: { pathOrUrl: string; isMain: boolean }[];
+  images: { pathOrUrl: string; isMain: boolean; sortOrder: number }[];
+
+  // New fields
+  acceleration?: number | null;
+  engineCapacity?: string;
+  bodyType?: string;
+  bodyType_ru?: string;
+  bodyType_en?: string;
+  driveType?: string;
+  driveType_ru?: string;
+  driveType_en?: string;
+  color?: string;
+  color_ru?: string;
+  color_en?: string;
 };
 
 const containerVariants: Variants = {
@@ -203,6 +217,11 @@ export default function CarPage() {
   const fuelType = getLocalizedValue(t, currentLang, car.fuelType_ru, car.fuelType_en, car.fuelType, 'filter_');
   const transmission = getLocalizedValue(t, currentLang, car.transmission_ru, car.transmission_en, car.transmission, 'filter_');
   const condition = getLocalizedValue(t, currentLang, car.condition_ru, car.condition_en, car.condition, 'filter_');
+  
+  const bodyType = getLocalizedValue(t, currentLang, car.bodyType_ru, car.bodyType_en, car.bodyType || "");
+  const driveType = getLocalizedValue(t, currentLang, car.driveType_ru, car.driveType_en, car.driveType || "");
+  const color = getLocalizedValue(t, currentLang, car.color_ru, car.color_en, car.color || "", 'color_');
+  
   const rawDescription = currentLang === 'en' ? (car.description_en || car.descriptionMd) : (car.description_ru || car.descriptionMd);
   const specsField = currentLang === 'en' ? car.specs_en : car.specs_ru;
   
@@ -220,6 +239,39 @@ export default function CarPage() {
   );
   
   const priceStr = `$${car.priceUsd.toLocaleString()}`;
+  const distanceUnit = currentLang === 'en' ? 'km' : 'км';
+  const topSpeedStr = car.topSpeed ? `${car.topSpeed} ${t('catalog.kmh')}` : "";
+  const accelStr = car.acceleration ? `${car.acceleration} ${t('catalog.sec')}` : "";
+  const hpStr = car.horsepower ? `${car.horsepower} ${t('catalog.hp')}` : "";
+  const mileageStr = car.mileage === null || car.mileage === undefined ? "" : `${car.mileage.toLocaleString()} ${distanceUnit}`;
+  const engineCapacityStr = car.engineCapacity || "";
+  const driveTypeStr = driveType || "";
+  const bodyTypeStr = bodyType || "";
+  const colorStr = color || "";
+
+  const SpecTile = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
+    <div className="rounded-xl border border-border bg-secondary/20 p-4 flex items-start gap-3 min-w-0">
+      <div className="w-9 h-9 rounded-lg bg-background/80 border border-border flex items-center justify-center shrink-0">
+        <Icon className="w-5 h-5 text-muted-foreground" />
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs text-muted-foreground font-medium leading-tight">{label}</div>
+        <div className="text-lg md:text-xl font-semibold text-foreground leading-tight break-words">{value}</div>
+      </div>
+    </div>
+  );
+
+  const PriceTile = ({ value }: { value: string }) => (
+    <div className="rounded-xl border border-foreground/15 bg-foreground text-background p-4 flex items-start gap-3 min-w-0">
+      <div className="w-9 h-9 rounded-lg bg-background/10 border border-white/10 flex items-center justify-center shrink-0">
+        <DollarSign className="w-5 h-5 text-background" />
+      </div>
+      <div className="min-w-0">
+        <div className="text-xs text-background/70 font-medium leading-tight">{t('car_page.price')}</div>
+        <div className="text-lg md:text-xl font-semibold text-background leading-tight break-words">{value}</div>
+      </div>
+    </div>
+  );
 
   return (
     <motion.section 
@@ -257,20 +309,26 @@ export default function CarPage() {
             <div className="flex flex-col gap-1 md:gap-0 md:flex-row md:items-center">
               <span className="text-[15px] font-bold text-foreground mr-4">{title}</span>
               
-              <div className="flex items-center gap-3 text-xs md:text-sm text-muted-foreground font-medium">
+            <div className="flex items-center gap-3 text-xs md:text-sm text-muted-foreground font-medium">
+              {car.year ? (
                 <span className="flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
-                   <Calendar className="w-3.5 h-3.5" />
-                   {car.year}
+                  <Calendar className="w-3.5 h-3.5" />
+                  {car.year}
                 </span>
+              ) : null}
+              {car.horsepower ? (
                 <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
-                   <Gauge className="w-3.5 h-3.5" />
-                   {car.horsepower} {t('catalog.hp')}
+                  <Gauge className="w-3.5 h-3.5" />
+                  {car.horsepower} {t('catalog.hp')}
                 </span>
+              ) : null}
+              {fuelType ? (
                 <span className="hidden sm:flex items-center gap-1.5 bg-secondary px-2 py-1 rounded-md">
-                   <Fuel className="w-3.5 h-3.5" />
-                   {fuelType}
+                  <Fuel className="w-3.5 h-3.5" />
+                  {fuelType}
                 </span>
-              </div>
+              ) : null}
+            </div>
             </div>
 
             <div className="flex items-center gap-3 ml-auto">
@@ -294,9 +352,11 @@ export default function CarPage() {
             {title}
           </h1>
           <div className="flex flex-wrap gap-2">
-            <span className="px-2.5 py-1 rounded-md border border-border text-foreground text-[11px] font-semibold uppercase tracking-wider">
-              {car.year}
-            </span>
+            {car.year ? (
+              <span className="px-2.5 py-1 rounded-md border border-border text-foreground text-[11px] font-semibold uppercase tracking-wider">
+                {car.year}
+              </span>
+            ) : null}
             {tagsList.map((tag) => (
               <span
                 key={tag}
@@ -308,58 +368,22 @@ export default function CarPage() {
           </div>
 
 
-          <div className="grid grid-cols-2 gap-3 py-3 border-t border-border">
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Gauge className="w-4 h-4" />
-                <span className="text-xs">{t('car_card.speed')}</span>
-              </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `${car.topSpeed} ${t('catalog.kmh')}` : "—"}</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Gauge className="w-4 h-4" />
-                <span className="text-xs">{t('car_card.acceleration')}</span>
-              </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.topSpeed ? `3.5 ${t('catalog.sec')}` : "—"}</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Gauge className="w-4 h-4" />
-                <span className="text-xs">{t('car_card.power')}</span>
-              </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{car.horsepower} {t('catalog.hp')}</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Fuel className="w-4 h-4" />
-                <span className="text-xs">{t('car_page.fuel_type')}</span>
-              </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{fuelType}</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Cog className="w-4 h-4" />
-                <span className="text-xs">{t('admin.transmission')}</span>
-              </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{transmission}</span>
-            </div>
-             <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <BadgeCheck className="w-4 h-4" />
-                <span className="text-xs">{t('car_page.condition')}</span>
-              </div>
-              <span className="text-lg md:text-xl font-medium text-foreground">{condition}</span>
+          <div className="pt-4 border-t border-border">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {topSpeedStr ? <SpecTile icon={Gauge} label={t('car_card.speed')} value={topSpeedStr} /> : null}
+              {accelStr ? <SpecTile icon={Timer} label={t('car_card.acceleration')} value={accelStr} /> : null}
+              {hpStr ? <SpecTile icon={Zap} label={t('car_card.power')} value={hpStr} /> : null}
+              {fuelType ? <SpecTile icon={Fuel} label={t('catalog.fuel_type')} value={fuelType} /> : null}
+              {transmission ? <SpecTile icon={Cog} label={t('catalog.transmission')} value={transmission} /> : null}
+              {bodyTypeStr ? <SpecTile icon={CarFront} label={t('catalog.body_type')} value={bodyTypeStr} /> : null}
+              {engineCapacityStr ? <SpecTile icon={EngineIcon} label={t('catalog.engine_capacity')} value={engineCapacityStr} /> : null}
+              {driveTypeStr ? <SpecTile icon={DrivetrainIcon} label={t('catalog.drive_type')} value={driveTypeStr} /> : null}
+              {colorStr ? <SpecTile icon={Palette} label={t('catalog.color')} value={colorStr} /> : null}
+              {mileageStr ? <SpecTile icon={Route} label={t('catalog.mileage')} value={mileageStr} /> : null}
+              {condition ? <SpecTile icon={BadgeCheck} label={t('car_page.condition')} value={condition} /> : null}
+              {car.priceUsd ? <PriceTile value={priceStr} /> : null}
             </div>
           </div>
-
-          <div className="mt-auto pt-4 border-t border-border">
-             <div className="flex items-center gap-2 text-muted-foreground">
-                
-                <span className="text-sm font-medium">{t('car_page.price')}</span>
-              </div>
-              <span className="text-[15px] leading-none sm:text-4xl font-bold text-foreground tracking-tight">{priceStr}</span>
-            </div>
         </motion.div>
 
         <motion.div className="relative" variants={itemVariants}>
@@ -414,7 +438,7 @@ export default function CarPage() {
           >
             <CarouselContent className="-ml-2 md:-ml-4 lg:-ml-6">
               {images.map((src, idx) => (
-                <CarouselItem key={idx} className="pl-2 md:pl-4 lg:pl-6 basis-1/4">
+                <CarouselItem key={idx} className="pl-2 md:pl-4 lg:pl-6 basis-1/2 sm:basis-1/3 md:basis-1/4">
                   <div className="relative w-full p-1">
                     <button
                       onClick={() => {
@@ -525,9 +549,12 @@ export default function CarPage() {
               const itemTitle = currentLang === 'en' ? (item.title_en || item.title) : (item.title_ru || item.title);
               const itemFuel = getLocalizedValue(t, currentLang, item.fuelType_ru, item.fuelType_en, item.fuelType, 'filter_');
               const itemTrans = getLocalizedValue(t, currentLang, item.transmission_ru, item.transmission_en, item.transmission, 'filter_');
+              const itemDriveType = getLocalizedValue(t, currentLang, item.driveType_ru, item.driveType_en, item.driveType || "");
               
               const itemRawTags = currentLang === 'en' ? (item.tags_en || item.tags) : (item.tags_ru || item.tags);
               const itemTags = itemRawTags ? itemRawTags.split(',').filter(tag => tag.trim() !== '') : [];
+              const itemHp = item.horsepower ? `${item.horsepower} ${t('catalog.hp')}` : "";
+              const itemZeroTo100 = item.acceleration ? `${item.acceleration} ${t('catalog.sec')}` : "";
 
               return (
                 <div key={item.id} className="min-w-[280px] md:min-w-[320px] snap-start">
@@ -537,7 +564,12 @@ export default function CarPage() {
                     tags={itemTags}
                     year={item.year}
                     meta={[itemFuel, itemTrans]}
-                    specs={{ hp: `${item.horsepower} ${t('catalog.hp')}`, zeroTo100: item.topSpeed ? `3.5 ${t('catalog.sec')}` : '—' }}
+                    specs={{ hp: itemHp, zeroTo100: itemZeroTo100 }}
+                    details={{
+                      mileage: item.mileage ? `${item.mileage.toLocaleString()} ${currentLang === 'en' ? 'km' : 'км'}` : undefined,
+                      engineCapacity: item.engineCapacity,
+                      driveType: itemDriveType
+                    }}
                     price={`$${item.priceUsd.toLocaleString()}`}
                     id={item.id}
                   />
